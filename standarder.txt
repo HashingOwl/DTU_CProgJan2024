@@ -6,7 +6,7 @@ Grafik
 	Sprites er monokromatiske, men kan godt have én farve
 
 Tal
-	Vi bruger uint16_t 8.8 fixed point i spillet
+	Vi bruger uint16_t 16.16 fixed point i spillet
 Timers og IO
 Timer 2 og 3 bliver brugt til musik
 

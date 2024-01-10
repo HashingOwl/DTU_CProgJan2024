@@ -67,9 +67,3 @@ int32_t distFIXSquared(vector_t *p, vector_t *q){
 int32_t FIXSquared(int32_t num){
 	return FIXMUL(num, num);
 }
-char circleCollision(vector_t *p, vector_t *q, int32_t radius){
-	return distFIXSquared(p, q) < radius;
-}
-char rectangleCollision(vector_t *p, int32_t xMinBound, int32_t xMaxBound, int32_t yMinBound, int32_t yMaxBound){
-	return p -> x > xMinBound && p -> x < xMaxBound && p -> y > yMinBound && p -> y < yMaxBound;
-}

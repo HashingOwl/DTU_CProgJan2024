@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "math.h"
 
+//Tingene herinde skal ligge i main()
 void updatePosition(Body *body, Object *objects[], uint8_t numObj){
 	int timeStep = 0x00A0;
 	vector_t change = multVector(&((*ball).vel), timeStep);
