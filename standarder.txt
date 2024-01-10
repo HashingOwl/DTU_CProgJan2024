@@ -1,0 +1,16 @@
+Kommentarer og nomenklatur
+	PuTTY-koordinater: uint8_t: Koordinater der findes i vores 128x128 PuTTY konsol. Øverste venstre hjørne er (1,1).
+	game-koordinater: uint16_t: 16.16 Fixed, Koordinater for position og hastighed for objekter i spillet.
+
+Grafik
+	Sprites er monokromatiske, men kan godt have én farve
+
+Tal
+	Vi bruger uint16_t 8.8 fixed point i spillet
+Timers og IO
+Timer 2 og 3 bliver brugt til musik
+
+
+VALGTE KRAV
+1. liste: Multiple bullets, animated figure instead of bullet, score og highscore
+2. liste: Info på LED, 30010 joystick, sound from buzzer
