@@ -20,5 +20,6 @@ typedef struct {
 	uint32_t mass;
 }Object;
 
+void updatePosition(Body *body);
 
 #endif /* KINEMATICS_H_ */

@@ -27,6 +27,16 @@ void printVector(vector_t *v){
 	printf(" y: ");
 	printFix(v -> y);
 }
+void clampFIX(int32_t *x, int32_t min, int32_t max){
+	if(*x < min)
+		*x = min;
+	if(*x > max)
+		*x = max;
+}
+void clampVector(vector_t *v, int32_t min, int32_t max){
+	clampFIX(&(v->x), min, max);
+	clampFIX(&(v->y), min, max);
+}
 
 //Conversion
 int16_t FIXToint16(int32_t fix){
@@ -52,18 +62,26 @@ void rotateVector(vector_t *v, short a){
 }
 
 vector_t addVectors(vector_t *v1, vector_t *v2){
-	vector_t v = {(*v1).x + (*v2).x, (*v1).y + (*v2).y};
+	vector_t v = {v1->x + v2->x, v1->y + v2->y};
+	return v;
+}
+vector_t subtractVectors(vector_t *v1, vector_t *v2){
+	vector_t v = {v1->x - v2->x, v1->y - v2->y};
 	return v;
 }
 
+vector_t multBIGFIXVector(vector_t *v, int32_t k){
+	vector_t vNew = {BIGFIXMUL((*v).x, k), BIGFIXMUL((*v).y, k)};
+	return vNew;
+}
 vector_t multFIXVector(vector_t *v, int32_t k){
 	vector_t vNew = {FIXMUL((*v).x, k), FIXMUL((*v).y, k)};
 	return vNew;
 }
 
-int32_t distFIXSquared(vector_t *p, vector_t *q){
+uint32_t distFIXSquared(vector_t *p, vector_t *q){
 	return FIXSquared(q -> x - p -> x) + FIXSquared(q -> y - p -> y);
 }
-int32_t FIXSquared(int32_t num){
+uint32_t FIXSquared(int32_t num){
 	return FIXMUL(num, num);
 }
