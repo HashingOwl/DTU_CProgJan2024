@@ -1,6 +1,8 @@
-baseA = 440
+baseA = 330
 lowestC = baseA*((2**-4)*(2**(-9/12)))
 octaves = 8
+
+intSize = 16
 
 noteNames = {
     0 : "C",
@@ -21,19 +23,41 @@ noteList = []
 freqList = []
 currFreq = lowestC
 
-prescalar = 799
+prescalar = 5
 ucFreq = 64000000
+toneLength = 0.15
+toneSteps = 8
+restVal = 2500
+
+
 def freqToARR(freq):
+    if freq == 0:
+        return 2**intSize-1
     p = 1/freq
+    p /= toneSteps
     ARR = int(ucFreq*p/(prescalar+1)-1)
-    if ARR >= 2**(32):
+
+    if ARR >= 2**(intSize):
         print("ARR too large for:",freq)
     return ARR
+
+def rythm2Count(freq,length):
+    if freq == 0:
+        p=1/nd["A4"]
+    else:
+        p=1/freq
+    p/=toneSteps
+    count = int(length*toneLength/p)
+    if count >= 2**(intSize):
+        print("ARR too large for:",freq)
+    return count
+
 for i in range(octaves):
     for j in range(12):
         noteList.append(noteNames[j]+str(i))
-        freqList.append(freqToARR(currFreq))
+        freqList.append(currFreq)
         currFreq *= 2**(1/12)
+
 noteList.append("R")
 freqList.append(0)
 #Note dictionary
@@ -69,8 +93,8 @@ melody = [
     ["F#4",1],
     ["A5",4],
 ]"""
-#Megalovania
 
+#Megalovania
 melody = [
     ["F4",1], #Takt 1
     ["F4",1],
@@ -162,17 +186,18 @@ melody = [
     ["D6",1], 
     ["A5",1], 
     ["D6",1], 
-    ["C6",4],
-    ["C6",5],
+    ["C5",9],
 ]
+
 outStringTones = "uint16_t notesT[{}] = ".format(len(melody)) + "{"
 outStringRythm = "uint16_t notesR[{}] = ".format(len(melody)) + "{"
 for i in melody:
-    outStringTones += str(hex(nd[i[0]])) + ","
-    outStringRythm += str(hex(int(i[1]*2))) + ","
+    outStringTones += str(hex(freqToARR(nd[i[0]]))) + ","
+    outStringRythm += str(hex(rythm2Count(nd[i[0]],i[1]))) + ","
 outStringTones += "};"
 outStringRythm += "};"
-
+print("#define nNotes {}".format(len(melody)))
+print("#define resetSize {}".format(freqToARR(nd["A4"])))
 print(outStringTones)
 print(outStringRythm)
 
