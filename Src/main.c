@@ -3,8 +3,6 @@
 #include "math.h"
 #include "kinematics.h"
 #include "io.h"
-#define FIXMUL(a, b) ((a>>8)*(b>>8))
-#define BIGFIXMUL (a, b) (((a>>12)*(b>>12)) << 8)
 
 enum joy1Dir {
     joy1UP = 0b1,
@@ -33,8 +31,8 @@ void initTimer(){
 	RCC->APB2ENR |= RCC_APB2Periph_TIM15;
 	TIM15->CR1 &= 0b1111010001110000;
 	TIM15->CR1 |= TIM_CR1_CEN;
-	TIM15->ARR = (uint8_t) 10;
-	TIM15->PSC = 0x1F40;
+	TIM15->ARR = (uint8_t) 50;
+	TIM15->PSC = 0xFA00;
 
 	TIM15->DIER |= 0x0001; // Enable timer 15 interrupts
 	NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, 1); // Set interrupt priority
@@ -43,21 +41,24 @@ void initTimer(){
 
 int main(void)
 {
-	Body ship = {{2 << 16, 2<<16}, {}};
-	Object objects[2] = {{.pos = {20 << 16, 20 << 16}, .radius = 1 << 16, .mass = 0x50000000}, {.pos = {40 << 16, 60 << 16}, .radius = 1 << 16, .mass = 0x50000000}};
-	uint8_t numOfObj = 2;
+	Body ship = {{2 << FIX, 2<<FIX}, {}};
+	Object objects[3] = {{.pos = {20 << FIX, 20 << FIX}, .radius = 5 << FIX, .mass = 0x50000000}, {.pos = {40 << FIX, 60 << FIX}, .radius = 5 << FIX, .mass = 0x50000000}, {.pos = {30 << FIX, 40 << FIX}, .radius = 3 << FIX, .mass = 0xAA000000}};
+	uint8_t numOfObj = 3;
 	int16_t consoleSize = 90;
-	int32_t gameSize = consoleSize << 16;
+	int32_t gameSize = consoleSize << FIX;
 	uart_init(1000000);
 	printf("\033[2J\033[H");
 	setupJoystickPins();
-	gotoxy(objects[0].pos.x >> 16, objects[0].pos.y >> 16);
+	gotoxy(objects[0].pos.x >> FIX, objects[0].pos.y >> FIX);
 	printf("O");
-	gotoxy(objects[1].pos.x >> 16, objects[1].pos.y >> 16);
+	gotoxy(objects[1].pos.x >> FIX, objects[1].pos.y >> FIX);
+	printf("O");
+	gotoxy(objects[2].pos.x >> FIX, objects[2].pos.y >> FIX);
 	printf("O");
 
+
 	char circleCollision(vector_t *p, vector_t *q, uint32_t *radius){
-		return distFIXSquared(p, q) < *radius;
+		return distFIXSquared(p, q, FIX) < *radius;
 	}
 
 	char checkCollisions(vector_t *pos, Object objects[], uint8_t numOfObj){
@@ -70,9 +71,8 @@ int main(void)
 	}
 
 	void updatePosition(Body *body, Object objects[], uint8_t numOfObj){
-		vector_t change = multFIXVector(&(body ->vel), 0x00000100);
-		vector_t newPos = addVectors(&change, &(body->pos));
-		clampVector(&newPos, 1 << 16, gameSize); //Keep body within bounds
+		vector_t newPos = addVectors(&(body ->vel), &(body->pos));
+		clampVector(&newPos, 1 << FIX, gameSize); //Keep body within bounds
 
 		if(checkCollisions(&newPos, objects, numOfObj)){
 			body -> vel.x = 0;
@@ -80,24 +80,34 @@ int main(void)
 		}
 		body -> pos = newPos;
 	}
+
+	//Aplies linear gravity (F=G*M/r) from all objects to body
 	void applyGravity(Body *body, Object objects[], uint8_t numOfObj){
-		uint32_t offset = 2 << 16 * 0;
 		// Iterate through each object
 		for (uint8_t i = 0; i < numOfObj; ++i){
+			//Squared Distance from body to object
+			uint32_t distanceSquared = distFIXSquared(&body->pos, &objects[i].pos, 10) + 0x400;
+			if(distanceSquared < 0x3200 * 0x3200){
+				int32_t gravForceMagnitude = (objects[i].mass / distanceSquared);
 
-			//Squared Distance from body to object + offset for smoothness
-			uint32_t distanceSquared = distFIXSquared(&body->pos, &objects[i].pos) + offset;
-			// Vector from body to the object
-			vector_t displacement = subtractVectors(&(objects[i].pos), &(body -> pos));
-			int32_t gravForceMagnitude = objects[i].mass / (distanceSquared >> 16); //Bitshiftning so distanceSquared is way smaller than massG, thus getting higher precision
-			vector_t force = multFIXVector(&displacement, gravForceMagnitude);
+				// Vector from body to the object. Gives the direction of gravity
+				vector_t forceVector = subtractVectors(&(objects[i].pos), &(body -> pos));
 
-			//decreasing force. No partiucalr reason for 18. Just seems to fit.
-			force.x = force.x >> 17;
-			force.y = force.y >> 17;
+				//Now forceVector becomes the actual force applied on the body.
+				forceVector.x *= gravForceMagnitude;
+				forceVector.y *= gravForceMagnitude;
 
-			// Update body's velocity
-			body->vel = addVectors(&body->vel, &force);
+				forceVector.x = forceVector.x >> 25;
+				forceVector.y = forceVector.y >> 25;
+
+	//			//decreasing force. No partiucalr reason for 18. Just seems to fit.
+	//			forceVector.x = force.x >> 17;
+	//			forceVector.y = force.y >> 17;
+
+				// Update body's velocity
+				body->vel.x += forceVector.x;
+				body->vel.y += forceVector.y;
+			}
 		}
 	}
 	initTimer();
@@ -105,36 +115,31 @@ int main(void)
 	while(1){
 		if(frame){
 			frame = 0;
-			uint32_t accNum = 0x00000400;
-			vector_t acc = {};
+			uint32_t accNum = 0x00000010;
 			uint8_t joy1In = readJoy();
 
 			switch (joy1In){
-			case joy1UP:
-				acc.y = -accNum;
-				break;
-			case joy1DOWN:
-				acc.y = accNum;
-				break;
-			case joy1LEFT:
-				acc.x = -accNum;
-				break;
-			case joy1RIGHT:
-				acc.x = accNum;
-				break;
-			case joy1CENTER:
-				ship.vel.x = 0;
-				ship.vel.y = 0;
+				case joy1UP:
+					ship.vel.y -= accNum;
+					break;
+				case joy1DOWN:
+					ship.vel.y += accNum;
+					break;
+				case joy1LEFT:
+					ship.vel.x -= accNum;
+					break;
+				case joy1RIGHT:
+					ship.vel.x += accNum;
+					break;
 			}
-			ship.vel = addVectors(&acc, &ship.vel);
 			applyGravity(&ship, objects, numOfObj);
 
-			gotoxy(ship.pos.x >> 16, ship.pos.y >> 16);
+			gotoxy(ship.pos.x >> FIX, ship.pos.y >> FIX);
 			printf(" ");
 
 			updatePosition(&ship, objects, numOfObj);
 
-			gotoxy(ship.pos.x >> 16, ship.pos.y >> 16);
+			gotoxy(ship.pos.x >> FIX, ship.pos.y >> FIX);
 			printf("o");
 		}
 	}
