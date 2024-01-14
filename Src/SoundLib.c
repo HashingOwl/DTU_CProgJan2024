@@ -10,10 +10,12 @@ void setVoltage(uint8_t val) {
 
 void disableMusic(void) {
 	TIM16->DIER &= ~(0x0001); // Disable timer 16 interrupts
+	TIM2->DIER &= ~(0x0001); // Disable timer 2 interrupts
 }
 
 void enableMusic(void) {
 	TIM16->DIER |= 0x0001; // Enable timer 16 interrupts
+	TIM2->DIER |= 0x0001; // Enable timer 2 interrupts
 }
 
 void TIM2_IRQHandler(void) {
