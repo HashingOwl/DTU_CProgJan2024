@@ -19,5 +19,12 @@ void setPinInput(GPIO_TypeDef *port, uint8_t pin);
 
 void setupLEDPins();
 
+enum joy1Dir {
+    joy1UP = 0b1,
+    joy1DOWN = 0b10,
+    joy1LEFT = 0b100,
+    joy1RIGHT = 0b1000,
+    joy1CENTER = 0b10000
+};
 uint8_t readJoy();
 void setLED(uint8_t color);

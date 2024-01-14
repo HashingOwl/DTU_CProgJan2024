@@ -16,6 +16,10 @@ typedef struct {
 	int32_t x, y;
 }vector_t;
 
+typedef struct {
+	int8_t x, y;
+}vector8_t;
+
 //Utility
 void printFix(int32_t i);
 void printVector(vector_t *v);

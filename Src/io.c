@@ -86,6 +86,7 @@ char readSinglePin(GPIO_TypeDef *port, uint8_t pin){
 	return (char) (reading >> pin);
 }
 
+
 uint8_t readJoy(){
 	uint8_t joy = 0;
 	joy |= readSinglePin(UP_JOY1) << 0;
