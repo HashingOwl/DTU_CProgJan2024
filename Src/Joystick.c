@@ -45,15 +45,27 @@ void initJoystickAnalog () {
 	while (!(ADC1->ISR & 0x00000001)); // Wait until ready
 }
 
-uint16_t readJoystickAnalog() {
-	uint8_t res = 0;
-	uint16_t adcVal;
-
+uint16_t JoystickXADC() {
 	//Reads ADC value on PA4 (Joy-X)
 	ADC_RegularChannelConfig(ADC1, ADC_Channel_5, 1, ADC_SampleTime_1Cycles5);
 	ADC_StartConversion(ADC1); // Start ADC read
 	while (ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == 0);
-	adcVal = ADC_GetConversionValue(ADC1);
+	return ADC_GetConversionValue(ADC1);
+}
+
+uint16_t JoystickYADC() {
+	//Reads ADC value on PA6 (Joy-Y)
+	ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 1, ADC_SampleTime_1Cycles5);
+	ADC_StartConversion(ADC1); // Start ADC read
+	while (ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == 0);
+	return ADC_GetConversionValue(ADC1);
+}
+
+uint8_t readJoystickDigital() {
+	uint8_t res = 0;
+	uint16_t adcVal;
+
+	adcVal = JoystickXADC();
 
 	//Checks result and converts it to standard joystick format
 	if (adcVal <= 500) {
@@ -63,12 +75,8 @@ uint16_t readJoystickAnalog() {
 		res |= 0x08;
 	}
 
-	//Reads ADC value on PA6 (Joy-Y)
-	ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 1, ADC_SampleTime_1Cycles5);
-	ADC_StartConversion(ADC1); // Start ADC read
-	while (ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == 0);
-	adcVal = ADC_GetConversionValue(ADC1);
 
+	adcVal = JoystickYADC();
 	//Checks result and converts it to standard joystick format
 	if (adcVal <= 500) {
 		res |= 0x01;
@@ -78,4 +86,29 @@ uint16_t readJoystickAnalog() {
 	}
 
 	return res;
+}
+
+void readJoystickAnalog(uint32_t* x,uint32_t* y) {
+	int32_t adcVal;
+
+	adcVal = JoystickXADC();
+
+	//Create dead-zone and center
+	if (1400>adcVal && adcVal>1050) {
+		adcVal = 2048;
+	}
+	adcVal -= 2048;
+	adcVal >>= 6;
+	(*x) = adcVal;
+
+	adcVal = JoystickYADC();
+
+	//Create dead-zone and center
+	if (2100>adcVal && adcVal>1800) {
+		adcVal = 2048;
+	}
+	adcVal -= 2048;
+	adcVal >>= 6;
+	(*y) = adcVal;
+
 }
