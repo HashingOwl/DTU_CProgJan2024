@@ -17,11 +17,11 @@ void gotoxy(int x, int y){
 int main(void)
 {
 	//Ship and gravityobjects in game
-	Body ship = {{2 << FIX, 2<<FIX}, {8<<FIX-2, 1<<FIX-3}};
-	uint8_t numOfObj = 2;
-	Object objects[2] = {{.pos = {20 << FIX, 20 << FIX}, .radius = 5 << FIX, .mass = 0x50000000}, {.pos = {40 << FIX, 60 << FIX}, .radius = 5 << FIX, .mass = 0x50000000}};
+	GravityTarget ship = {{2 << FIX, 2<<FIX}, {8<<FIX-2, 1<<FIX-3}};
+	uint8_t numOfSources = 2;
+	GravitySource sources[2] = {{.pos = {20 << FIX, 20 << FIX}, .squareRadius = 5 << FIX, .mass = 0x50000000}, {.pos = {40 << FIX, 60 << FIX}, .squareRadius = 5 << FIX, .mass = 0x50000000}};
 	uint8_t numOfBullets = 20;
-	Body bullets[20] = {};
+	GravityTarget bullets[20] = {};
 
 	//Console
 	int16_t consoleSize = 90;
@@ -29,26 +29,26 @@ int main(void)
 
 	uart_init(1000000);
 	initJoystickAnalog();
-	soundInit();
-	initTimer();
+	//soundInit();
+	initTimer15(0, 3600000);
 
 	printf("\033[2J\033[H");
-	gotoxy(objects[0].pos.x >> FIX, objects[0].pos.y >> FIX + 1);
+	gotoxy(sources[0].pos.x >> FIX, sources[0].pos.y >> FIX + 1);
 	printf("O");
-	gotoxy(objects[1].pos.x >> FIX, objects[1].pos.y >> FIX + 1);
+	gotoxy(sources[1].pos.x >> FIX, sources[1].pos.y >> FIX + 1);
 	printf("O");
 
-	void shipUpdatePosition(Body *body, Object objects[], uint8_t numOfObj){
-		vector_t newPos = addVectors(&(body->vel), &(body->pos));
+	void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t numOfSources){
+		vector_t newPos = addVectors(&(target->vel), &(target->pos));
 		clampVector(&newPos, 1 << FIX, gameSize); //Keep body within bounds
 
-		if(checkCollisions(&newPos, objects, numOfObj)){
-			body -> vel.x = 0;
-			body -> vel.y = 0;
+		if(checkCollisions(&newPos, sources, numOfSources)){
+			target -> vel.x = 0;
+			target -> vel.y = 0;
 			//MORE CODE TO HANDLE COLLISION
 				//Eg. loose af life. Decrease score. Play animation
 		}
-		body -> pos = newPos;
+		target -> pos = newPos;
 	}
 
 	while(1){
@@ -67,8 +67,8 @@ int main(void)
 			gotoxy(ship.pos.x >> FIX, ship.pos.y >> FIX + 1);
 			printf(" ");
 
-			applyGravity(&ship, objects, numOfObj);
-			shipUpdatePosition(&ship, objects, numOfObj);
+			applyGravity(&ship, sources, numOfSources);
+			shipUpdatePosition(&ship, sources, numOfSources);
 			bulletUpdatePosition(bullets, numOfBullets);
 
 			//Draw new graphic. Console coordinates are (ship.x >> FIX, ship.y >> FIX)
@@ -85,21 +85,21 @@ void TIM1_BRK_TIM15_IRQHandler(void){
 	TIM15->SR &= ~0x0001; // Clear interrupt bit
 }
 
-void initTimer(){
+void initTimer15(uint16_t prescale, uint32_t reloadValue){
 	RCC->APB2ENR |= RCC_APB2Periph_TIM15;
 	TIM15->CR1 &= 0b1111010001110000;
 	TIM15->CR1 |= TIM_CR1_CEN;
-	TIM15->ARR = (uint8_t) 50;
-	TIM15->PSC = 0xFA00;
+	TIM15->ARR = reloadValue;
+	TIM15->PSC = prescale;
 
 	TIM15->DIER |= 0x0001; // Enable timer 15 interrupts
 	NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, 1); // Set interrupt priority
 	NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn); // Enable interrupt
 }
 
-void bulletUpdatePosition(Body bullets[], uint8_t numOfBullets){
+void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 	for(uint8_t i = 0; i < numOfBullets; i++){
-		if(bullets[i].draw){
+		if(bullets[i].isActive){
 			bullets[i].pos.x += bullets[i].vel.x;
 			bullets[i].pos.y += bullets[i].vel.y;
 		}

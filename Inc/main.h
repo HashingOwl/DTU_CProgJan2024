@@ -9,8 +9,8 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
-void bulletUpdatePosition(Body bullets[], uint8_t numOfBullets);
+void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets);
 vector8_t analogJoystickInput();
-void initTimer();
+void initTimer15();
 
 #endif /* MAIN_H_ */

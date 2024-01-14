@@ -10,7 +10,7 @@
 
 
 //Aplies linear gravity (F=G*M/r) from all objects to body
-void applyGravity(Body *body, Object objects[], uint8_t numOfObj){
+void applyGravity(GravityTarget *body, GravitySource objects[], uint8_t numOfObj){
 	// Iterate through each object
 	for (uint8_t i = 0; i < numOfObj; ++i){
 		//Squared Distance from body to object. An offset is added to prevent VERY large numbers when close.
@@ -37,14 +37,14 @@ void applyGravity(Body *body, Object objects[], uint8_t numOfObj){
 }
 
 //Returns true if the sqaured distance between vectors p and q are less than radius
-char circleCollision(vector_t *p, vector_t *q, uint32_t *radius){
-	return distFIXSquared(p, q, FIX) < *radius;
+char circleCollision(vector_t *p, vector_t *q, uint32_t *squareDistance){
+	return distFIXSquared(p, q, FIX) < *squareDistance;
 }
 
 //Returns true if the vector pos collides with any of the objects
-char checkCollisions(vector_t *pos, Object objects[], uint8_t numOfObj){
-	for(uint8_t i = 0; i < numOfObj; i++){
-		if(circleCollision(pos, &(objects[i].pos), &(objects[i].radius))){
+char checkCollisions(vector_t *pos, GravitySource sources[], uint8_t numOfSources){
+	for(uint8_t i = 0; i < numOfSources; i++){
+		if(circleCollision(pos, &(sources[i].pos), &(sources[i].squareRadius))){
 			return 1;
 		}
 	}

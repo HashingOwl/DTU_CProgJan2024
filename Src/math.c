@@ -37,10 +37,11 @@ void clampVector(vector_t *v, int32_t min, int32_t max){
 	clampFIX(&(v->x), min, max);
 	clampFIX(&(v->y), min, max);
 }
+char isOutOfBound
 
 //Conversion
 int16_t FIXToint16(int32_t fix){
-	return fix >> 16;
+	return fix >> FIX;
 }
 
 //Lookup functions
