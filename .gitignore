@@ -53,3 +53,8 @@ dkms.conf
 
 #Added from baseproject
 .DS_Store
+.settings/language.settings.xml
+
+#Added by Roald
+Debug/
+*.launch
