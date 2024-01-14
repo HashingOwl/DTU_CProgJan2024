@@ -11,5 +11,6 @@
 
 void bulletUpdatePosition(Body bullets[], uint8_t numOfBullets);
 vector8_t analogJoystickInput();
+void initTimer();
 
 #endif /* MAIN_H_ */
