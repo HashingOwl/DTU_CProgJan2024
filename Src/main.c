@@ -20,7 +20,7 @@ int8_t collisionCounter = 0;
 int main(void)
 {
 	//Ship and gravityobjects in game
-	GravityTarget ship = {{20 << FIX, 50<<FIX}, {4<<(FIX-2), 1<<(FIX-3)}};
+	GravityTarget ship = {{90 << FIX, 90<<FIX}, {4<<(FIX-2), 1<<(FIX-3)}};
 	uint8_t numOfSources = 2;
 	GravitySource sources[2] = {{.pos = {20 << FIX, 20 << FIX}, .squareRadius = 5 << FIX, .mass = 0x50000000}, {.pos = {40 << FIX, 60 << FIX}, .squareRadius = 5 << FIX, .mass = 0x50000000}};
 	uint8_t numOfBullets = 20;
@@ -47,7 +47,6 @@ int main(void)
 	drawBackground(TestBG);
 	drawSprite(TestBG, Alien1_1, 3, 4, RED, sources[0].pos.x >> FIX, sources[0].pos.y >> FIX);
 	drawSprite(TestBG, Alien1_1, 3, 4, RED, sources[1].pos.x >> FIX, sources[1].pos.y >> FIX);
-	drawSprite(TestBG, Bullet_1, 1, 2, GREEN, ship.pos.x >> FIX, ship.pos.y >> FIX);
 
 	while(1){
 		if(frame){
@@ -55,19 +54,21 @@ int main(void)
 			//newPowerupCountdown--;
 
 			//Getting input from joystick. Passed as reference
-			vector_t input;
-			readJoystickAnalog(&input.x, &input.y);
+			//vector_t input;
+			//readJoystickAnalog(&input.x, &input.y);
 
 			//Update velocity based on input
-			ship.vel.x += input.x;
-			ship.vel.y += input.y;
+//			ship.vel.x += input.x;
+//			ship.vel.y += input.y;
 
 			applyGravity(&ship, sources, numOfSources);
 			shipUpdatePosition(&ship, sources, numOfSources);
-			bulletUpdatePosition(bullets, numOfBullets);
+			//bulletUpdatePosition(bullets, numOfBullets);
+
+			//printVector(&ship.pos);
 
 			//Draw new graphic. Console coordinates are (ship.x >> FIX, ship.y >> FIX)
-			drawSprite(TestBG, Bullet_1, 1, 2, GREEN, 10, 10);//ship.pos.x >> FIX, ship.pos.y >> FIX);
+			drawSprite(TestBG, Bullet_1, 1, 2, GREEN, ship.pos.x >> FIX, ship.pos.y >> FIX);
 			cleanRect(grid, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
 			resetGrid(grid);
 			contaminateRect(grid, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
@@ -113,7 +114,7 @@ void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 
 void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t numOfSources){
 	vector_t newPos = addVectors(&(target->vel), &(target->pos));
-	clampVector(&newPos, 1 << FIX, WIDTH); //Keep body within bounds
+	clampVector(&newPos, 0, WIDTH << FIX - 1); //Keep body within bounds
 
 	if(checkCollisions(&newPos, sources, numOfSources)){
 		target -> vel.x = 0;
