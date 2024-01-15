@@ -7,7 +7,6 @@ void setVoltage(uint8_t val) {
 	TIM2->EGR |= 0x01;
 }
 
-
 void disableMusic(void) {
 	TIM16->DIER &= ~(0x0001); // Disable timer 16 interrupts
 	TIM2->DIER &= ~(0x0001); // Disable timer 2 interrupts
@@ -34,6 +33,7 @@ uint16_t currentNote = 0;
 uint8_t rest = 0;
 #define stepSize 32
 #define restLength 75
+
 void TIM1_UP_TIM16_IRQHandler(void) {
 
 	if (rest && rythmCount > (notesR[currentNote]>>5)) {

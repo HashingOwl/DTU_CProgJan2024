@@ -41,21 +41,34 @@ void print_byte(uint8_t byte) {
     USART_SendData(USART2, byte);
 }
 
-// TO DO: Check if 3 digits is nescessary for cords, reduce use of UART
+void print_bytes(uint8_t bytes, uint8_t numBytes) {
+	for (uint8_t i = 0; i < numBytes; i++) {
+		print_byte(bytes[i]);
+	}
+}
+
 // Upper left corner is (0, 0)
 void gotoxy(uint8_t x, uint8_t y) {
 	x++; y++;
+
 	print_byte(ESC);
 	print_byte((uint8_t)'[');
-	print_byte((y/100) + 48);
-	print_byte(((y/10)%10) + 48);
-	print_byte((y%10) + 48);
-	print_byte((uint8_t)';');
-	print_byte((x/100) + 48);
-	print_byte(((x/10)%10) + 48);
-	print_byte((x%10) + 48);
-	print_byte((uint8_t)'H');
 
+	if (y>100)
+		print_byte((y/100) + 48);
+	if (y>10)
+		print_byte(((y/10)%10) + 48);
+	print_byte((y%10) + 48);
+
+	print_byte((uint8_t)';');
+
+	if (x>100)
+		print_byte((x/100) + 48);
+	if (x>10)
+		print_byte(((x/10)%10) + 48);
+	print_byte((x%10) + 48);
+
+	print_byte((uint8_t)'H');
 }
 
 void fgcolor(uint8_t foreground) {
@@ -91,15 +104,6 @@ void bgcolor(uint8_t background) {
 }
 
 void color(uint8_t foreground, uint8_t background) {
-// combination of fgcolor() and bgcolor() - uses less bandwidth
-/*
-  uint8_t type = 22;             // normal text
-	if (foreground > 7) {
-	  type = 1;                // bold text
-		foreground -= 8;
-	}
-  printf("%c[%d;%d;%dm", ESC, type, foreground+30, background+40);
-*/
 	if (foreground > 7) {
 		foreground -= 8;
 		print_byte(ESC);

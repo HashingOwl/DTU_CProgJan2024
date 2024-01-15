@@ -77,6 +77,7 @@ vector_t multFIXVector(vector_t *v, int32_t k){
 uint32_t distFIXSquared(vector_t *p, vector_t *q, uint8_t shift){
 	return ((q -> x - p -> x) * (q -> x - p -> x) + (q -> y - p -> y) * (q -> y - p -> y)) >> shift;
 }
+
 //Pseudo-random number generation
 uint16_t P1  = 0x3FF; // Register 1
 uint16_t P2  = 0x3FF; // Register 2

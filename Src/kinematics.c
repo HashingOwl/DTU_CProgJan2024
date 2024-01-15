@@ -32,6 +32,9 @@ void applyGravity(GravityTarget *body, GravitySource objects[], uint8_t numOfObj
 			// Update body's velocity
 			body->vel.x += forceVector.x;
 			body->vel.y += forceVector.y;
+
+			// Det ser ud til at der ikke tages højde for masse når legemet acceleres af kraften.
+			// Dette resultere i at tunge objekter falder langsomere end lette objekter, hvilket ikke er ønskværdigt
 		}
 	}
 }

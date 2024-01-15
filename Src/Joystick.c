@@ -88,7 +88,7 @@ uint8_t readJoystickDigital() {
 	return res;
 }
 
-void readJoystickAnalog(uint32_t* x,uint32_t* y) {
+void readJoystickAnalog(uint32_t* x, uint32_t* y) {
 	int32_t adcVal;
 
 	adcVal = JoystickXADC();
