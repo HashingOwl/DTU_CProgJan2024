@@ -9,11 +9,6 @@
 //Set true by interrupt when it is time to make a new frame
 volatile uint8_t frame = 0;
 
-//SKAL SLETTES
-void gotoxy(int x, int y){
-	printf("\033[%d;%dH", y, x);
-}
-
 int main(void)
 {
 	//Ship and gravityobjects in game
