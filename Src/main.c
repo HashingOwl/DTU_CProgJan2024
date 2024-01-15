@@ -38,16 +38,16 @@ int main(void)
 	//int32_t gameSize = consoleSize << FIX;
 	uint8_t backgroundContamination[WIDTH * HEIGHT / 8];
 
-	uart_init(1000000);
+	uart_init(2000000);
 	initJoystickAnalog();
 	//soundInit();
 	initTimer15(19, 3600000);
 	//newPowerupCountdown = getPowerupCountdown();
 
 	//Drawing game
-	drawBackground(TestBG);
-	drawSprite(TestBG, Alien1_1, 3, 4, RED, sources[0].pos.x >> FIX, sources[0].pos.y >> FIX);
-	drawSprite(TestBG, Alien1_1, 3, 4, RED, sources[1].pos.x >> FIX, sources[1].pos.y >> FIX);
+	drawBackground(BG_Stratosphere_1);
+	drawSprite(BG_Stratosphere_1, Alien1_1, 3, 4, RED, sources[0].pos.x >> FIX, sources[0].pos.y >> FIX);
+	drawSprite(BG_Stratosphere_1, Alien1_1, 3, 4, RED, sources[1].pos.x >> FIX, sources[1].pos.y >> FIX);
 
 	while(1){
 		if(updateFrame){
@@ -69,9 +69,9 @@ int main(void)
 			//printVector(&ship.pos);
 
 			//Draw new graphic. Console coordinates are (ship.pos.x >> FIX, ship.pos.y >> FIX)
-			drawBullet(ship.pos.x >> FIX, ship.pos.y >> FIX, frameCount);
+			drawBullet(ship.pos.x >> FIX, ship.pos.y >> FIX, frameCount, BG_Stratosphere_1);
 			cleanRect(backgroundContamination, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
-			drawCleanBackground(TestBG, backgroundContamination);
+			drawCleanBackground(BG_Stratosphere_1, backgroundContamination);
 			resetGrid(backgroundContamination);
 			contaminateRect(backgroundContamination, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
 
@@ -123,7 +123,7 @@ void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t 
 		target -> vel.x = 0;
 		target -> vel.y = 0;
 		//MORE CODE TO HANDLE COLLISION
-			//Eg. loose af life. Decrease score. Play animation
+		//Eg. loose af life. Decrease score. Play animation
 	}
 	target -> pos = newPos;
 }
@@ -132,8 +132,22 @@ inline int16_t getPowerupCountdown(){
 	return 200 + random8bit();
 }
 
-void drawBullet(int x, int y, uint32_t frameCount) {
-	drawSprite(TestBG, Bullet_Anim[frameCount/8 % 3], 1, 2, GREEN, x, y);
+void drawBullet(int x, int y, uint32_t frameCount, const uint8_t* background) {
+	drawSprite(background, Bullet_Anim[frameCount/8 % 3], 1, 2, WHITE, x, y);
+}
+
+void drawPlayer(int x, int y, int alienNum, uint32_t frameCount, const uint8_t* background) {
+	switch(alienNum) {
+	case 1:
+		drawSprite(background, Alien1_Anim[frameCount/8 % 2], 3, 4, GREEN, x, y);
+		break;
+	case 2:
+		drawSprite(background, Alien2_Anim[frameCount/8 % 2], 3, 4, GREEN, x, y);
+		break;
+	case 3:
+		drawSprite(background, Alien3_Anim[frameCount/8 % 2], 3, 4, GREEN, x, y);
+		break;
+	}
 }
 //void generateNewPowerup(powerup *powerup, uint8_t nextPowerupNum){
 //	powerup newPowerup;
