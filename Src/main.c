@@ -80,7 +80,7 @@ int main(void)
 
 
 //DISSE SKAL RYKKES TIL EN ANDEN FIL
-void TIM1_BRK_TIM15_IRQHandler(void){
+void TIM1_BRK_TIM15_IRQHandler(void) {
 	frame = 1;
 	TIM15->SR &= ~0x0001; // Clear interrupt bit
 }
