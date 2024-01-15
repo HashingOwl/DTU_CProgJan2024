@@ -1,8 +1,11 @@
 import numpy as np
+import os
 from PIL import Image
 
-imgName = "C:\\Users\\alber\\Downloads\\BG1.png"
-spriteName = "testBG2"
+#imgName = "C:\\Users\\alber\\OneDrive\\Dokumenter\\GitHub\\DTU_CProgJan2024\\alien3_2.png"
+ 
+spriteName = "alien3_2"
+imgName = os.path.dirname(os.path.abspath(__file__))+"\\"+spriteName+".png"
 image_file = Image.open(imgName)
 image_file = image_file.convert('1')
 
@@ -40,7 +43,7 @@ for y in range(imageMatrix.shape[0]//2):
             count = 0
 print("uint8_t {}x = {};".format(spriteName,imageMatrix.shape[1]))
 print("uint8_t {}y = {};".format(spriteName,imageMatrix.shape[0]))
-outString = "uint8_t {}[{}] = ".format(spriteName,len(sprite)) + "{"
+outString = "const uint8_t {}[{}] = ".format(spriteName,len(sprite)) + "{"
 count = 0
 for i in sprite:
     outString += "0x"+f"{(i & 0xffffffff):02x}" + "," +"\t"
@@ -50,4 +53,12 @@ for i in sprite:
         outString += "\n"
 outString += "};"
 
-print(outString)
+
+fileName = os.path.dirname(os.path.abspath(__file__))+"\\assets\\"+"{}.txt".format(spriteName)
+
+print(fileName)
+f = open(fileName,"w+")
+f.write(outString)
+f.close()
+print("done")
+#print(outString)
