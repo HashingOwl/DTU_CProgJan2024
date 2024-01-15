@@ -1,9 +1,9 @@
 Kommentarer og nomenklatur
-	PuTTY-koordinater: uint8_t: Koordinater der findes i vores 128x128 PuTTY konsol. Øverste venstre hjørne er (1,1).
+	PuTTY-koordinater: uint8_t: Koordinater der findes i vores 128x128 PuTTY konsol. Øverste venstre hjørne er (0,0).
 	game-koordinater: uint16_t: 16.16 Fixed, Koordinater for position og hastighed for objekter i spillet.
 
 Grafik
-	Sprites er monokromatiske, men kan godt have én farve
+	Sprites er monokromatiske, dvs. én farve. Farven kan være en hvilket som helst ANSI farve, indstillet i PuTTY
 
 Tal
 	Vi bruger uint16_t 16.16 fixed point i spillet
