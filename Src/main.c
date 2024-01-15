@@ -33,7 +33,6 @@ int main(void)
 //	int16_t newPowerupCountdown;
 
 	//Console and graphic
-	int16_t consoleSize = 128;
 	//int32_t gameSize = consoleSize << FIX;
 	uint8_t grid[WIDTH * HEIGHT / 8];
 
@@ -69,9 +68,10 @@ int main(void)
 
 			//Draw new graphic. Console coordinates are (ship.x >> FIX, ship.y >> FIX)
 			drawSprite(TestBG, Bullet_1, 1, 2, GREEN, ship.pos.x >> FIX, ship.pos.y >> FIX);
-			cleanRect(grid, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
-			resetGrid(grid);
-			contaminateRect(grid, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
+			cleanRect(backgroundContamination, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
+			drawCleanBackground(TestBG, backgroundContamination);
+			resetGrid(backgroundContamination);
+			contaminateRect(backgroundContamination, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
 
 //			if(newPowerupCountdown == 0){
 //
