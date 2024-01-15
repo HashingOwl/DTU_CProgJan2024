@@ -42,5 +42,6 @@ vector_t multFIXVector(vector_t *v, int32_t k);
 uint32_t distFIXSquared(vector_t *p, vector_t *q, uint8_t shift);
 uint32_t FIXSquared(int32_t num);
 
-
+//Pseudo random number generation
+uint8_t random8bit();
 #endif /* MATH_H_ */

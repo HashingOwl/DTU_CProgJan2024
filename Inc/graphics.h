@@ -21,6 +21,8 @@
 #include "GraphicData.h"
 #include <string.h>
 
+#define WIDTH 128
+#define HEIGHT 64
 
 #define ESC 0x1B
 

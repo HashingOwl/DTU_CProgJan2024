@@ -1,59 +1,58 @@
 #include "stm32f30x_conf.h" // STM32 config
 #include "30010_io.h" 		// Input/output library for this course
+
 #include "math.h"
 #include "kinematics.h"
-#include "io.h"
+
 #include "Joystick.h"
+#include "soundLib.h"
+
+#include "graphics.h"
+#include "GraphicData.h"
 #include "main.h"
 
 //Set true by interrupt when it is time to make a new frame
 volatile uint8_t frame = 0;
 
-//SKAL SLETTES
-void gotoxy(int x, int y){
-	printf("\033[%d;%dH", y, x);
-}
+//Set to number > 0 corresponding to the number of frames the collision animation and effect takes. Decreased at every frame if > 0.
+int8_t collisionCounter = 0;
 
 int main(void)
 {
 	//Ship and gravityobjects in game
-	GravityTarget ship = {{2 << FIX, 2<<FIX}, {8<<FIX-2, 1<<FIX-3}};
+	GravityTarget ship = {{20 << FIX, 50<<FIX}, {4<<(FIX-2), 1<<(FIX-3)}};
 	uint8_t numOfSources = 2;
 	GravitySource sources[2] = {{.pos = {20 << FIX, 20 << FIX}, .squareRadius = 5 << FIX, .mass = 0x50000000}, {.pos = {40 << FIX, 60 << FIX}, .squareRadius = 5 << FIX, .mass = 0x50000000}};
 	uint8_t numOfBullets = 20;
 	GravityTarget bullets[20] = {};
 
-	//Console
-	int16_t consoleSize = 90;
-	int32_t gameSize = consoleSize << FIX;
+	//Powerups
+//	powerup powerups[4] = {};
+//	uint8_t numOfPowerups = 4;
+//	uint8_t nextPowerupNum = 0;
+//	int16_t newPowerupCountdown;
+
+	//Console and graphic
+	int16_t consoleSize = 128;
+	//int32_t gameSize = consoleSize << FIX;
+	uint8_t grid[WIDTH * HEIGHT / 8];
 
 	uart_init(1000000);
 	initJoystickAnalog();
 	//soundInit();
-	initTimer15(0, 3600000);
+	initTimer15(19, 3600000);
+	//newPowerupCountdown = getPowerupCountdown();
 
-	printf("\033[2J\033[H");
-	gotoxy(sources[0].pos.x >> FIX, sources[0].pos.y >> FIX + 1);
-	printf("O");
-	gotoxy(sources[1].pos.x >> FIX, sources[1].pos.y >> FIX + 1);
-	printf("O");
-
-	void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t numOfSources){
-		vector_t newPos = addVectors(&(target->vel), &(target->pos));
-		clampVector(&newPos, 1 << FIX, gameSize); //Keep body within bounds
-
-		if(checkCollisions(&newPos, sources, numOfSources)){
-			target -> vel.x = 0;
-			target -> vel.y = 0;
-			//MORE CODE TO HANDLE COLLISION
-				//Eg. loose af life. Decrease score. Play animation
-		}
-		target -> pos = newPos;
-	}
+	//Drawing game
+	drawBackground(TestBG);
+	drawSprite(TestBG, Alien1_1, 3, 4, RED, sources[0].pos.x >> FIX, sources[0].pos.y >> FIX);
+	drawSprite(TestBG, Alien1_1, 3, 4, RED, sources[1].pos.x >> FIX, sources[1].pos.y >> FIX);
+	drawSprite(TestBG, Bullet_1, 1, 2, GREEN, ship.pos.x >> FIX, ship.pos.y >> FIX);
 
 	while(1){
 		if(frame){
 			frame = 0;
+			//newPowerupCountdown--;
 
 			//Getting input from joystick. Passed as reference
 			vector_t input;
@@ -63,17 +62,23 @@ int main(void)
 			ship.vel.x += input.x;
 			ship.vel.y += input.y;
 
-			//Remove old graphic. Console coordinates are (ship.x >> FIX, ship.y >> FIX)
-			gotoxy(ship.pos.x >> FIX, ship.pos.y >> FIX + 1);
-			printf(" ");
-
 			applyGravity(&ship, sources, numOfSources);
 			shipUpdatePosition(&ship, sources, numOfSources);
 			bulletUpdatePosition(bullets, numOfBullets);
 
 			//Draw new graphic. Console coordinates are (ship.x >> FIX, ship.y >> FIX)
-			gotoxy(ship.pos.x >> FIX, ship.pos.y >> FIX + 1);
-			printf("o");
+			drawSprite(TestBG, Bullet_1, 1, 2, GREEN, 10, 10);//ship.pos.x >> FIX, ship.pos.y >> FIX);
+			cleanRect(grid, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
+			resetGrid(grid);
+			contaminateRect(grid, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
+
+//			if(newPowerupCountdown == 0){
+//
+//			}
+//
+//			for(uint8_t p = 0; p < numOfPowerups; p++){
+//
+//			}
 		}
 	}
 }
@@ -105,3 +110,24 @@ void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 		}
 	}
 }
+
+void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t numOfSources){
+	vector_t newPos = addVectors(&(target->vel), &(target->pos));
+	clampVector(&newPos, 1 << FIX, WIDTH); //Keep body within bounds
+
+	if(checkCollisions(&newPos, sources, numOfSources)){
+		target -> vel.x = 0;
+		target -> vel.y = 0;
+		//MORE CODE TO HANDLE COLLISION
+			//Eg. loose af life. Decrease score. Play animation
+	}
+	target -> pos = newPos;
+}
+
+inline int16_t getPowerupCountdown(){
+	return 200 + random8bit();
+}
+//void generateNewPowerup(powerup *powerup, uint8_t nextPowerupNum){
+//	powerup newPowerup;
+//	powerup[nextPowerupNum]
+//}

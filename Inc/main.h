@@ -9,8 +9,20 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
-void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets);
-vector8_t analogJoystickInput();
+typedef struct {
+	vector_t pos;
+}powerup;
+
+
+//DISSE SKAL RYKKES TIL EN ANDEN FIL
+void TIM1_BRK_TIM15_IRQHandler(void);
+
 void initTimer15(uint16_t prescale, uint32_t reloadValue);
+
+void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets);
+
+void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t numOfSources);
+
+inline int16_t getPowerupCountdown();
 
 #endif /* MAIN_H_ */
