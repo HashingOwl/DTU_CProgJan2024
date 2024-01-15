@@ -13,21 +13,46 @@
 // In PuTTY coordinates
 #define WIDTH 128
 #define HEIGHT 64
+/*
+ * GraphicData.c
+ *
+ *  Created on: 8. jan. 2024
+ *      Author: valde
+ */
 
+#include "GraphicData.h"
+
+//==========================================SPRITES==============================================
+
+//------Bullet------
 extern const uint8_t Bullet_1[1*2];
 extern const uint8_t Bullet_2[1*2];
 extern const uint8_t Bullet_3[1*2];
-extern const uint8_t Bullet_4[1*2];
 
-// Animation
+//------Alien1------
+extern const uint8_t Alien1_1[3*6];
+extern const uint8_t Alien1_2[2*6];
+extern const uint8_t Alien1_Dead[3*6];
+
+//------Alien2------
+extern const uint8_t Alien2_1[3*6];
+extern const uint8_t Alien2_2[3*6];
+extern const uint8_t Alien2_Dead[3*6];
+
+//------Alien3------
+extern const uint8_t Alien3_1[2*4];
+extern const uint8_t Alien3_2[2*4];
+extern const uint8_t Alien3_Dead[2*4];
+
+//========================================ANIMATIONS=============================================
+
+extern const uint8_t* Alien1_Anim[2];
+extern const uint8_t* Alien2_Anim[2];
+extern const uint8_t* Alien3_Anim[2];
 extern const uint8_t* Bullet_Anim[3];
 
-extern const uint8_t Alien1_1[3*4];
-extern const uint8_t Alien1_2[3*4];
-const uint8_t* Alien1_Anim[2];
-
-extern const uint8_t Alien1_Dead[3*4];
-
-extern const uint8_t TestBG[WIDTH*HEIGHT/4];
+//========================================BACKGROUNDS============================================
+extern const uint8_t BG_Stratosphere_1[128*64/4];
+extern const uint8_t TestBG[128*64/4];
 
 #endif /* GRAPHICDATA_H_ */
