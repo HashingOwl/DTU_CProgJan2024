@@ -58,7 +58,7 @@ uint16_t JoystickYADC() {
 	ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 1, ADC_SampleTime_1Cycles5);
 	ADC_StartConversion(ADC1); // Start ADC read
 	while (ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == 0);
-	return ADC_GetConversionValue(ADC1);
+	return 4095-ADC_GetConversionValue(ADC1);
 }
 
 uint8_t readJoystickDigital() {
