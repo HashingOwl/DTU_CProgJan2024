@@ -11,6 +11,6 @@
 
 void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets);
 vector8_t analogJoystickInput();
-void initTimer15();
+void initTimer15(uint16_t prescale, uint32_t reloadValue);
 
 #endif /* MAIN_H_ */
