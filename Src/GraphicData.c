@@ -8,31 +8,25 @@
 #include "GraphicData.h"
 
 const uint8_t Bullet_1[1*2] = {
-		0xD8,
-		0x14,
+		0xAC,
+		0x35,
 };
 
 const uint8_t Bullet_2[1*2] = {
-		0x27,
-		0x14,
+		0x69,
+		0x96,
 };
 
 const uint8_t Bullet_3[1*2] = {
-		0x28,
-		0x1B,
-};
-
-const uint8_t Bullet_4[1*2] = {
-		0x28,
-		0xE4,
+		0x3A,
+		0x5C,
 };
 
 // Animation
-const uint8_t* Bullet_Anim[4] = {
+const uint8_t* Bullet_Anim[3] = {
 		Bullet_1,
 		Bullet_2,
 		Bullet_3,
-		Bullet_4,
 };
 
 const uint8_t Alien1_1[3*4] = {

@@ -20,7 +20,7 @@ extern const uint8_t Bullet_3[1*2];
 extern const uint8_t Bullet_4[1*2];
 
 // Animation
-extern const uint8_t* Bullet_Anim[4];
+extern const uint8_t* Bullet_Anim[3];
 
 extern const uint8_t Alien1_1[3*4];
 extern const uint8_t Alien1_2[3*4];

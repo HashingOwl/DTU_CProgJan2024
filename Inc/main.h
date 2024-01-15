@@ -25,4 +25,6 @@ void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t 
 
 inline int16_t getPowerupCountdown();
 
+void drawBullet(int x, int y, uint32_t frameCount);
+
 #endif /* MAIN_H_ */

@@ -12,13 +12,15 @@
 #include "main.h"
 
 //Set true by interrupt when it is time to make a new frame
-volatile uint8_t frame = 0;
+volatile uint8_t updateFrame = 0;
 
 //Set to number > 0 corresponding to the number of frames the collision animation and effect takes. Decreased at every frame if > 0.
 int8_t collisionCounter = 0;
 
 int main(void)
 {
+	uint32_t frameCount = 0;
+
 	//Ship and gravityobjects in game
 	GravityTarget ship = {{90 << FIX, 90<<FIX}, {4<<(FIX-2), 1<<(FIX-3)}};
 	uint8_t numOfSources = 2;
@@ -48,8 +50,8 @@ int main(void)
 	drawSprite(TestBG, Alien1_1, 3, 4, RED, sources[1].pos.x >> FIX, sources[1].pos.y >> FIX);
 
 	while(1){
-		if(frame){
-			frame = 0;
+		if(updateFrame){
+			updateFrame = 0;
 			//newPowerupCountdown--;
 
 			//Getting input from joystick. Passed as reference
@@ -66,8 +68,8 @@ int main(void)
 
 			//printVector(&ship.pos);
 
-			//Draw new graphic. Console coordinates are (ship.x >> FIX, ship.y >> FIX)
-			drawSprite(TestBG, Bullet_1, 1, 2, GREEN, ship.pos.x >> FIX, ship.pos.y >> FIX);
+			//Draw new graphic. Console coordinates are (ship.pos.x >> FIX, ship.pos.y >> FIX)
+			drawBullet(ship.pos.x >> FIX, ship.pos.y >> FIX, frameCount);
 			cleanRect(backgroundContamination, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
 			drawCleanBackground(TestBG, backgroundContamination);
 			resetGrid(backgroundContamination);
@@ -80,6 +82,7 @@ int main(void)
 //			for(uint8_t p = 0; p < numOfPowerups; p++){
 //
 //			}
+			frameCount++;
 		}
 	}
 }
@@ -87,7 +90,7 @@ int main(void)
 
 //DISSE SKAL RYKKES TIL EN ANDEN FIL
 void TIM1_BRK_TIM15_IRQHandler(void) {
-	frame = 1;
+	updateFrame = 1;
 	TIM15->SR &= ~0x0001; // Clear interrupt bit
 }
 
@@ -127,6 +130,10 @@ void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t 
 
 inline int16_t getPowerupCountdown(){
 	return 200 + random8bit();
+}
+
+void drawBullet(int x, int y, uint32_t frameCount) {
+	drawSprite(TestBG, Bullet_Anim[frameCount/8 % 3], 1, 2, GREEN, x, y);
 }
 //void generateNewPowerup(powerup *powerup, uint8_t nextPowerupNum){
 //	powerup newPowerup;
