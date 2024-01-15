@@ -34,7 +34,7 @@ int main(void)
 
 	//Console and graphic
 	//int32_t gameSize = consoleSize << FIX;
-	uint8_t grid[WIDTH * HEIGHT / 8];
+	uint8_t backgroundContamination[WIDTH * HEIGHT / 8];
 
 	uart_init(1000000);
 	initJoystickAnalog();
