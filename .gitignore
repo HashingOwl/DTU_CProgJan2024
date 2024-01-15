@@ -58,3 +58,4 @@ dkms.conf
 #Added by Roald
 Debug/
 *.launch
+.settings/language.settings.xml
