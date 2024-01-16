@@ -1,10 +1,3 @@
-/*
- * Joystick.c
- *
- *  Created on: 9. jan. 2024
- *      Author: alber
- */
-
 #include "stm32f30x_conf.h" // STM32 config
 
 /*
@@ -43,6 +36,23 @@ void initJoystickAnalog () {
 
 	ADC1->CR |= 0x00000001; // Enable ADC1 (0x01 - Enable, 0x02 - Disable)
 	while (!(ADC1->ISR & 0x00000001)); // Wait until ready
+
+	//Initialize buttons
+	RCC->AHBENR |= RCC_AHBPeriph_GPIOC;	// Enable clock for GPIO Port C
+
+	//Initialize PC9 to input which corresponds to B1
+	GPIOC->MODER |= (0x00000000 << (9 * 2));
+	GPIOC->PUPDR &= ~(0x00000003 << (9 * 2));
+	GPIOC->PUPDR |= (0x00000002 << (9 * 2));
+
+	//Initialize PC8 to input which corresponds to B2
+	GPIOC->MODER |= (0x00000000 << (8 * 2));
+	GPIOC->PUPDR &= ~(0x00000003 << (8 * 2));
+	GPIOC->PUPDR |= (0x00000002 << (8 * 2));
+}
+
+uint8_t readJoystickButtons(void) {
+	return (GPIOC->IDR & 0x300)>>8;
 }
 
 uint16_t JoystickXADC() {

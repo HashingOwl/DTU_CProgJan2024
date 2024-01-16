@@ -32,6 +32,7 @@ void initLED (void) {
 }
 
 /*
+//Hvis flere farver vil opnås kan man implementere PWM til de forskellige LED'er
 Color 0: off
 Color 1: Red
 Color 2: Green
