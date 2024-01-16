@@ -4,9 +4,11 @@
  *  Created on: Jan 9, 2024
  *      Author: rotho
  */
+#define SQUARE(a) 		((a)*(a))
 #define FIX 8
-#define FIXMUL(a, b) ((a)*(b)) >> FIX
-#define FIXSQUARE(a) FIXMUL(a, a)
+#define FIXMUL(a, b) 	((a)*(b) >> FIX)
+#define FIXDIV(a, b) 	((a << FIX)/(b))
+#define FIXSQUARE(a) 	FIXMUL(a, a)
 #include <stdio.h>
 
 #ifndef MATH_H_
@@ -38,6 +40,10 @@ int16_t FIXToint16(int32_t fix);
 vector_t addVectors(vector_t *v1, vector_t *v2);
 vector_t subtractVectors(vector_t *v1, vector_t *v2);
 vector_t multFIXVector(vector_t *v, int32_t k);
+vector_t divideFIXVector(vector_t *v, int32_t k);
+vector_t normalizeFIXVector(vector_t* v);
+
+uint32_t dotFIX(vector_t* a, vector_t* b);
 uint32_t distFIXSquared(vector_t *p, vector_t *q, uint8_t shift);
 
 //Pseudo random number generation

@@ -40,7 +40,7 @@ void clampVector(vector_t *v, int32_t min, int32_t max){
 
 //Bounds checking
 char outOfBounds(int32_t num, int32_t min, int32_t max){
-	return num < min || num > max;
+	return (num < min || num > max);
 }
 
 //Conversion
@@ -60,6 +60,46 @@ vector_t subtractVectors(vector_t *v1, vector_t *v2){
 vector_t multFIXVector(vector_t *v, int32_t k){
 	vector_t vNew = {FIXMUL((*v).x, k), FIXMUL((*v).y, k)};
 	return vNew;
+}
+
+vector_t divideFIXVector(vector_t *v, int32_t k) {
+	vector_t vNew = {FIXDIV((*v).x, k), FIXDIV((*v).y, k)};
+	return vNew;
+}
+
+// MAYBE THIS ISN'T IDEAL, I JUST REALLY NEED A SQUARE ROOT FUNCTION.
+// TAKEN FROM https://stackoverflow.com/questions/45148893/square-root-source-code-found-on-the-net
+#include <limits.h>
+// greatest power of 4 <= a power-of-2 minus 1
+#define POW4_LE_POW2M1(n) (  ((n)/2 + 1) >> ((n)%3==0)  )
+
+unsigned isqrt(unsigned num) {
+  unsigned res = 0;
+  // The second-to-top bit is set: 1 << 30 for 32 bits
+  // Needs work to run on unusual platforms where `unsigned` has padding or odd bit width.
+  unsigned bit = POW4_LE_POW2M1(UINT_MAX);
+  // "bit" starts at the highest power of four <= the argument.
+  while (bit > num) { bit >>= 2; }
+  while (bit > 0) {
+    if (num >= res + bit) {
+      num -= res + bit;
+      res = (res >> 1) + bit;  // Key difference between this and OP's code
+    } else {
+      res >>= 1;
+    }
+    bit >>= 2;
+  }
+  return res;
+}
+
+vector_t normalizeFIXVector(vector_t* v) {
+	int32_t mag = isqrt(SQUARE(v->x)+SQUARE(v->y));
+	vector_t result = divideFIXVector(v, mag);
+	return result;
+}
+
+uint32_t dotFIX(vector_t* a, vector_t* b) {
+	return (FIXMUL(a->x, b->x) + FIXMUL(a->y, b->y));
 }
 
 uint32_t distFIXSquared(vector_t *p, vector_t *q, uint8_t shift){

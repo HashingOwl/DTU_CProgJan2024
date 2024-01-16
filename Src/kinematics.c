@@ -46,6 +46,7 @@ char circleCollision(vector_t *p, vector_t *q, uint32_t squareDistance){
 }
 
 //Returns true if the vector pos collides with any of the objects
+/*
 char checkCollisions(GravityTarget* target, GravitySource sources[], uint8_t numOfSources){
 	for(uint8_t i = 0; i < numOfSources; i++){
 		if(circleCollision(&(target->pos), &(sources[i].pos), target->squareRadius + sources[i].squareRadius)){
@@ -54,3 +55,4 @@ char checkCollisions(GravityTarget* target, GravitySource sources[], uint8_t num
 	}
 	return 0;
 }
+*/

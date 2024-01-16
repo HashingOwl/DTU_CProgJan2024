@@ -13,13 +13,13 @@
 // "anchor" is not in fixedPoint, but just regular intergers, as it is only used for graphics. int32_t is overkill.
 typedef struct {
 	vector_t pos, vel, anchor;
-	uint32_t squareRadius;
+	uint32_t radius;
 	char isActive;
 } GravityTarget;
 
 typedef struct {
 	vector_t pos, anchor;
-	uint32_t squareRadius;
+	uint32_t radius;
 	uint32_t mass;
 } GravitySource;
 
@@ -30,6 +30,6 @@ void applyGravity(GravityTarget *target, GravitySource sources[], uint8_t numOfS
 char circleCollision(vector_t *p, vector_t *q, uint32_t squareDistance);
 
 //Returns true if the vector pos collides with any of the objects
-char checkCollisions(GravityTarget* target, GravitySource sources[], uint8_t numOfsources);
+//char checkCollisions(GravityTarget* target, GravitySource sources[], uint8_t numOfsources);
 
 #endif /* KINEMATICS_H_ */

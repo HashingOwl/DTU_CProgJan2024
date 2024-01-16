@@ -16,16 +16,26 @@
 #define PLAYING 2
 #define PAUSED 3
 
+// Fixed point constants
+#define BORDER_PAD 	(2 << FIX)
+#define U_WIDTH 	(WIDTH << FIX)
+#define U_HEIGHT 	(HEIGHT * 2 << FIX)
+/*
 #define MIN_X 0x200 //2.00
 #define MAX_X 0x7B00 //123.00
 #define MIN_Y 0x200 //2.00
 #define MAX_Y 0x7B00 //123.00
+*/
 
 //Set true by interrupt when it is time to make a new frame
 volatile uint8_t updateFrame = 0;
 
 //Set to number > 0 corresponding to the number of frames the collision animation and effect takes. Decreased at every frame if > 0.
 int8_t collisionCounter = 0;
+
+// Used for debugging
+long int debug1 = 0;
+long int debug2 = 0;
 
 int main(void)
 {
@@ -49,13 +59,13 @@ int main(void)
 			.pos = {64 << FIX, 64<<FIX},
 			.vel = {0, 0},
 			.anchor = {6, 4},
-			.squareRadius = 4*4 << FIX};
+			.radius = 5 << FIX};
 
 	// Asteroids creating gravity
 	uint8_t numAsteroids = 2;
 	GravitySource asteroids[2] = {
-			{.pos = {36 << FIX, 36 << FIX}, .anchor = {8, 8}, .squareRadius = 8*8 << FIX, .mass = 0x50000000},
-			{.pos = {92 << FIX, 92 << FIX}, .anchor = {8, 8}, .squareRadius = 8*8 << FIX, .mass = 0x50000000}};
+			{.pos = {36 << FIX, 36 << FIX}, .anchor = {8, 8}, .radius = 10 << FIX, .mass = 80 << 12},
+			{.pos = {92 << FIX, 92 << FIX}, .anchor = {8, 8}, .radius = 10 << FIX, .mass = 80 << 12}};
 	uint8_t numBullets = 20;
 	GravityTarget bullets[20] = {};
 
@@ -65,16 +75,17 @@ int main(void)
 	// Not actually a constant, it can be changed in software. It's a pointer to a constant.
 	const uint8_t* currentBackground = BG_Stratosphere_1;
 
-	//Miscenlaneous
-	vector_t asteroidPrintOffset = {-0x500, -0x400};
-	vector_t shipPrintOffset = {-0x100, -0x100};
-
 	// INITIALISATION DRAWING: Shoudl be made whenever we set the gamemode to PLAYING
 	drawBackground(currentBackground);
 	// Asteroids
 	for (int i = 0; i < numAsteroids; i++) {
 		drawAsteroid(&asteroids[i], currentBackground);
 	}
+
+	vector_t debugVec = {2 << FIX, 4 << FIX};
+	debugVec = normalizeFIXVector(&debugVec);
+	debug1 = debugVec.x;
+	debug2 = debugVec.y;
 
 	while(1){
 		if(updateFrame){
@@ -87,23 +98,54 @@ int main(void)
 				break;
 //=========================================PLAYING======================================================
 			case PLAYING:;
+				//-------------------INPUT----------------------------------
 				//Getting input from joystick. Passed as reference
 				vector_t input = {0, 0};
 				//readJoystickAnalog(&input.x, &input.y);
 				// Temporary when testing from a board without proper joystick. Please outcomment it instead of deleting.
 				uint8_t joyVal = readJoy();
-				input.y -= ((joyVal & 1) != 0);
-				input.y += ((joyVal & 2) != 0);
-				input.x -= ((joyVal & 4) != 0);
-				input.x += ((joyVal & 8) != 0);
+				input.y -= ((joyVal & 1) != 0) * 20;
+				input.y += ((joyVal & 2) != 0) * 20;
+				input.x -= ((joyVal & 4) != 0) * 20;
+				input.x += ((joyVal & 8) != 0) * 20;
+
+				//------------------PHYSICS---------------------------------
 
 				//Update velocity based on input
-				ship.vel.x += input.x * 16;
-				ship.vel.y += input.y * 16;
+				ship.vel.x += input.x;
+				ship.vel.y += input.y;
 
 				applyGravity(&ship, asteroids, numAsteroids);
-				shipUpdatePosition(&ship, asteroids, numAsteroids);
+
+				shipUpdatePosition(&ship);
 				bulletUpdatePosition(bullets, numBullets);
+
+				// Player-Bounds collision
+				if(outOfBounds(ship.pos.x, 	ship.radius + BORDER_PAD, U_WIDTH - ship.radius - BORDER_PAD)) {
+					clamp(&(ship.pos.x), 	ship.radius + BORDER_PAD, U_WIDTH - ship.radius - BORDER_PAD);
+					ship.vel.x /= -2;
+				}
+				if(outOfBounds(ship.pos.y, 	ship.radius + BORDER_PAD, U_HEIGHT - ship.radius - BORDER_PAD)) {
+					clamp(&(ship.pos.y), 	ship.radius + BORDER_PAD, U_HEIGHT - ship.radius - BORDER_PAD);
+					ship.vel.y /= -2;
+				}
+
+				// Player-Asteroids collision
+				for (int i = 0; i < numAsteroids; i++) {
+					// Square of
+					if (circleCollision(&(ship.pos), &(asteroids[i].pos), FIXSQUARE(ship.radius + asteroids[i].radius))) {
+						// Do a spherical bounce of velocity, and move out player a bit.
+						vector_t normal = subtractVectors(&ship.pos, &asteroids[i].pos);
+						normal = normalizeFIXVector(&normal);
+						vector_t impulse = multFIXVector(&normal, -2*dotFIX(&ship.vel, &normal));
+						ship.vel = addVectors(&ship.vel, &impulse);
+						// Ships speed is halved after reflection
+						ship.vel = multFIXVector(&ship.vel, (1 << FIX) >> 1);
+						// Nudge the ship out as well. Not an ideal solution, but it's sufficient
+						vector_t nudge = multFIXVector(&normal, 2 << FIX);
+						ship.pos = addVectors(&ship.pos, &nudge);
+					}
+				}
 
 				//-------------------Drawing--------------------------------
 				// Player
@@ -113,6 +155,9 @@ int main(void)
 				// Clean Background
 				drawCleanBackground(currentBackground, backgroundContamination);
 				resetGrid(backgroundContamination);
+
+				gotoxy(0,0); printf("%4ld", debug1);
+				gotoxy(0,1); printf("%4ld", debug2);
 
 				//------------Contaminate-for-next-frame--------------------
 				// Player
@@ -135,26 +180,30 @@ int main(void)
 	}
 }
 
-void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t numOfSources){
-	vector_t newPos = addVectors(&(target->vel), &(target->pos));
+void shipUpdatePosition(GravityTarget *ship){
+	ship->pos = addVectors(&(ship->pos), &(ship->vel));
+}
 
+// Things removed from this function
+/*
+ 	 vector_t newPos = addVectors(&(target->vel), &(target->pos));
+	target -> pos = newPos;
 
-	if(outOfBounds(newPos.x, MIN_X, MAX_X))
+	clamp(&(newPos.x), target->radius + BORDER_PAD, U_WIDTH - BORDER_PAD); //Keep body within bounds
+	clamp(&(newPos.y), target->radius + BORDER_PAD, U_HEIGHT - BORDER_PAD); //Keep body within bounds
+
+ 	if(outOfBounds(newPos.x, MIN_X, MAX_X))
 		target->vel.x = 0;
 	if(outOfBounds(newPos.y, MIN_Y, MAX_Y))
 		target->vel.y = 0;
-
-	clampVector(&newPos, MIN_X, MAX_X); //Keep body within bounds
 
 	if(checkCollisions(&newPos, sources, numOfSources)){
 		target -> vel.x = 0;
 		target -> vel.y = 0;
 		//MORE CODE TO HANDLE COLLISION
-			//Eg. loose af life. Decrease score. Play animation
+		//Eg. loose af life. Decrease score. Play animation
 	}
-
-	target -> pos = newPos;
-}
+ */
 
 
 

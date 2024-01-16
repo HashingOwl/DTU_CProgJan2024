@@ -21,7 +21,7 @@ void initTimer15(uint16_t prescale, uint32_t reloadValue);
 
 void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets);
 
-void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t numOfSources);
+void shipUpdatePosition(GravityTarget *ship);
 
 inline int16_t getPowerupCountdown();
 
