@@ -54,13 +54,13 @@ void gotoxy(uint8_t x, uint8_t y) {
 	print_byte(ESC);
 	print_byte((uint8_t)'[');
 
-	if (y>=100) { print_byte((y/100)%10 + 48); }
+	if (y>=100) { print_byte((y/100) + 48); }
 	if (y>=10) 	{ print_byte(((y/10)%10) + 48); }
 	print_byte((y%10) + 48);
 
 	print_byte((uint8_t)';');
 
-	if (x>=100) { print_byte((x/100)%10 + 48); }
+	if (x>=100) { print_byte((x/100) + 48); }
 	if (x>=10) 	{ print_byte(((x/10)%10) + 48); }
 	print_byte((x%10) + 48);
 
