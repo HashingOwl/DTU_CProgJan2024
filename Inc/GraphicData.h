@@ -32,6 +32,11 @@ extern const uint8_t Bullet_3[1*2];
 //-----Asteroid-----
 extern const uint8_t Asteroid_1[5*10];
 
+//------Sentry------
+extern const uint8_t Sentry_1[5*4];
+extern const uint8_t Sentry_2[5*4];
+extern const uint8_t Sentry_3[5*4];
+
 //------Alien1------
 extern const uint8_t Alien1_1[3*6];
 extern const uint8_t Alien1_2[2*6];
@@ -53,6 +58,7 @@ extern const uint8_t* Alien1_Anim[2];
 extern const uint8_t* Alien2_Anim[2];
 extern const uint8_t* Alien3_Anim[2];
 extern const uint8_t* Bullet_Anim[3];
+extern const uint8_t* Sentry_Anim[4];
 
 //========================================BACKGROUNDS============================================
 extern const uint8_t BG_Stratosphere_1[128*64/4];
