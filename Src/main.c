@@ -80,9 +80,10 @@ int main(void)
 			frameCount++;
 
 			switch (gameState) {
-//=========================================MENU======================================================
+//==========================================MENU========================================================
 			case MENU:
 				break;
+//=========================================PLAYING======================================================
 			case PLAYING:;
 				//Getting input from joystick. Passed as reference
 				vector_t input;
@@ -120,7 +121,9 @@ int main(void)
 //
 //				}
 				break;
+//=========================================PLAYING======================================================
 			case PAUSED:
+				// Check for input, showing either boss_bakcground, or changing state to MENU or PLAYING
 				break;
 			}
 		}
