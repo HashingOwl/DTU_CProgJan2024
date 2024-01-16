@@ -9,24 +9,27 @@
 #ifndef KINEMATICS_H_
 #define KINEMATICS_H_
 
+// "anchor" is for graphics, since every gravityTarget and gravitySource is renderes graphicly
+// "anchor" is not in fixedPoint, but just regular intergers, as it is only used for graphics. int32_t is overkill.
 typedef struct {
-	vector_t pos, vel;
+	vector_t pos, vel, anchor;
+	uint32_t squareRadius;
 	char isActive;
-}GravityTarget;
+} GravityTarget;
 
 typedef struct {
-	vector_t pos;
+	vector_t pos, anchor;
 	uint32_t squareRadius;
 	uint32_t mass;
-}GravitySource;
+} GravitySource;
 
 //Aplies linear gravity (F=G*M/r) from all sources to the target
 void applyGravity(GravityTarget *target, GravitySource sources[], uint8_t numOfSoruces);
 
 //Returns true if the sqaured distance between vectors p and q are less than squareRadius
-char circleCollision(vector_t *p, vector_t *q, uint32_t *squareDistance);
+char circleCollision(vector_t *p, vector_t *q, uint32_t squareDistance);
 
 //Returns true if the vector pos collides with any of the objects
-char checkCollisions(vector_t *pos, GravitySource sources[], uint8_t numOfsources);
+char checkCollisions(GravityTarget* target, GravitySource sources[], uint8_t numOfsources);
 
 #endif /* KINEMATICS_H_ */

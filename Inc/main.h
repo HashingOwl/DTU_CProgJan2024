@@ -25,8 +25,10 @@ void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t 
 
 inline int16_t getPowerupCountdown();
 
-void drawBullet(int x, int y, uint32_t frameCount, const uint8_t* background);
+void drawBullet(GravityTarget* bullet, uint32_t frameCount, const uint8_t* background);
 
-void drawPlayer(int x, int y, int alienNum, uint32_t frameCount, const uint8_t* background);
+void drawAsteroid(GravitySource* asteroid, const uint8_t* background);
+
+void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const uint8_t* background);
 
 #endif /* MAIN_H_ */

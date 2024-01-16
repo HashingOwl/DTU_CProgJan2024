@@ -29,49 +29,51 @@ int8_t collisionCounter = 0;
 
 int main(void)
 {
+	// Init modules
+	uart_init(2000000);
+	initJoystickAnalog();
+	soundInit();
+	disableMusic();
+	initTimer15(19, 3600000);
+
+	// While using mini joystick as substitute for proper joystick
+	setupJoystickPins();
+
 	int gameState;
 	gameState = PLAYING;
 	// Used in sprite animations
 	uint32_t frameCount = 0;
 
 	//Ship and gravity objects in game
-	GravityTarget ship = {{100 << FIX, 5<<FIX}, {0x20, 0x800}};
-	uint8_t numOfSources = 2;
-	GravitySource sources[2] = {
-			{.pos = {40 << FIX, 50 << FIX}, .squareRadius = 0x3100, .mass = 0x50000000},
-			{.pos = {90 << FIX, 90 << FIX}, .squareRadius = 0x3100, .mass = 0x50000000}};
-	uint8_t numOfBullets = 20;
-	GravityTarget bullets[20] = {};
+	GravityTarget ship = {
+			.pos = {64 << FIX, 64<<FIX},
+			.vel = {0, 0},
+			.anchor = {6, 4},
+			.squareRadius = 4*4 << FIX};
 
-	//Powerups
-//	powerup powerups[4] = {};
-//	uint8_t numOfPowerups = 4;
-//	uint8_t nextPowerupNum = 0;
-//	int16_t newPowerupCountdown;
+	// Asteroids creating gravity
+	uint8_t numAsteroids = 2;
+	GravitySource asteroids[2] = {
+			{.pos = {36 << FIX, 36 << FIX}, .anchor = {8, 8}, .squareRadius = 8*8 << FIX, .mass = 0x50000000},
+			{.pos = {92 << FIX, 92 << FIX}, .anchor = {8, 8}, .squareRadius = 8*8 << FIX, .mass = 0x50000000}};
+	uint8_t numBullets = 20;
+	GravityTarget bullets[20] = {};
 
 	//Console and graphic
 	//int32_t gameSize = consoleSize << FIX;
-	uint8_t backgroundContamination[WIDTH * HEIGHT / 8];
-	uint8_t *currentBackground = BG_Stratosphere_1;
+	uint8_t backgroundContamination[WIDTH * HEIGHT / 8] = {};
+	// Not actually a constant, it can be changed in software. It's a pointer to a constant.
+	const uint8_t* currentBackground = BG_Stratosphere_1;
 
 	//Miscenlaneous
 	vector_t asteroidPrintOffset = {-0x500, -0x400};
 	vector_t shipPrintOffset = {-0x100, -0x100};
 
-	uart_init(1000000);
-	initJoystickAnalog();
-	soundInit();
-	disableMusic();
-	initTimer15(19, 3600000);
-	//newPowerupCountdown = getPowerupCountdown();
-
-	// While using mine joystick as substitute for proper joystick
-	setupJoystickPins();
-
-	//Drawing game
+	// INITIALISATION DRAWING: Shoudl be made whenever we set the gamemode to PLAYING
 	drawBackground(currentBackground);
-	for(uint8_t i = 0; i < numOfSources; i++){
-		drawSprite(TestBG, Alien1_1, 3, 4, RED, (sources[i].pos.x + asteroidPrintOffset.x) >> FIX, (sources[i].pos.y + asteroidPrintOffset.y) >> FIX);
+	// Asteroids
+	for (int i = 0; i < numAsteroids; i++) {
+		drawAsteroid(&asteroids[i], currentBackground);
 	}
 
 	while(1){
@@ -86,32 +88,35 @@ int main(void)
 //=========================================PLAYING======================================================
 			case PLAYING:;
 				//Getting input from joystick. Passed as reference
-				vector_t input;
-				readJoystickAnalog(&input.x, &input.y);
+				vector_t input = {0, 0};
+				//readJoystickAnalog(&input.x, &input.y);
+				// Temporary when testing from a board without proper joystick. Please outcomment it instead of deleting.
+				uint8_t joyVal = readJoy();
+				input.y -= ((joyVal & 1) != 0);
+				input.y += ((joyVal & 2) != 0);
+				input.x -= ((joyVal & 4) != 0);
+				input.x += ((joyVal & 8) != 0);
 
 				//Update velocity based on input
-				ship.vel.x += input.x >> 2;
-				ship.vel.y += input.y >> 3;
+				ship.vel.x += input.x * 16;
+				ship.vel.y += input.y * 16;
 
-				applyGravity(&ship, sources, numOfSources);
-				shipUpdatePosition(&ship, sources, numOfSources);
-				bulletUpdatePosition(bullets, numOfBullets);
+				applyGravity(&ship, asteroids, numAsteroids);
+				shipUpdatePosition(&ship, asteroids, numAsteroids);
+				bulletUpdatePosition(bullets, numBullets);
 
-				//DEBUG
-//				bgcolor(BLACK);
-//				fgcolor(WHITE);
-//				gotoxy(0,0);
-//				printVector(&ship.pos);
-//				gotoxy(0,1);
-//				printVector(&ship.vel);
+				//-------------------Drawing--------------------------------
+				// Player
+				drawAlien(&ship, 1, frameCount, currentBackground);
+				cleanRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
 
-				vector_t shipPrintPos = {(ship.pos.x + shipPrintOffset.x) >> FIX, (ship.pos.y + shipPrintOffset.y) >> FIX};
-
-				drawBullet(shipPrintPos.x, shipPrintPos.y, frameCount, currentBackground);
-				cleanRect(backgroundContamination, shipPrintPos.x, shipPrintPos.y, 4, 4);
+				// Clean Background
 				drawCleanBackground(currentBackground, backgroundContamination);
 				resetGrid(backgroundContamination);
-				contaminateRect(backgroundContamination, shipPrintPos.x, shipPrintPos.y, 4, 4);
+
+				//------------Contaminate-for-next-frame--------------------
+				// Player
+				contaminateRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
 
 //				if(newPowerupCountdown == 0){
 //
@@ -121,7 +126,7 @@ int main(void)
 //
 //				}
 				break;
-//=========================================PLAYING======================================================
+//=========================================PAUSED======================================================
 			case PAUSED:
 				// Check for input, showing either boss_bakcground, or changing state to MENU or PLAYING
 				break;
@@ -151,6 +156,8 @@ void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t 
 	target -> pos = newPos;
 }
 
+
+
 void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 	for(uint8_t i = 0; i < numOfBullets; i++){
 		if(bullets[i].isActive){
@@ -168,20 +175,24 @@ void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 //	powerup[nextPowerupNum]
 //}
 
-void drawBullet(int x, int y, uint32_t frameCount, const uint8_t* background) {
-	drawSprite(background, Bullet_Anim[frameCount/8 % 3], 1, 2, WHITE, x, y);
+void drawBullet(GravityTarget* bullet, uint32_t frameCount, const uint8_t* background) {
+	drawSprite(background, Bullet_Anim[frameCount/8 % 3], 1, 2, WHITE, (bullet->pos.x >> FIX) - bullet->anchor.x, (bullet->pos.y >> FIX) - bullet->anchor.y);
 }
 
-void drawPlayer(int x, int y, int alienNum, uint32_t frameCount, const uint8_t* background) {
+void drawAsteroid(GravitySource* asteroid, const uint8_t* background) {
+	drawSprite(background, Asteroid_1, 4, 8, YELLOW, (asteroid->pos.x >> FIX) - asteroid->anchor.x, (asteroid->pos.y >> FIX) - asteroid->anchor.y);
+}
+
+void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const uint8_t* background) {
 	switch(alienNum) {
 	case 1:
-		drawSprite(background, Alien1_Anim[frameCount/8 % 2], 3, 4, GREEN, x, y);
+		drawSprite(background, Alien1_Anim[frameCount/8 % 2], 3, 4, GREEN, (alien->pos.x >> FIX) - alien->anchor.x, (alien->pos.y >> FIX) - alien->anchor.y);
 		break;
 	case 2:
-		drawSprite(background, Alien2_Anim[frameCount/8 % 2], 3, 4, GREEN, x, y);
+		drawSprite(background, Alien2_Anim[frameCount/8 % 2], 3, 4, GREEN, (alien->pos.x >> FIX) - alien->anchor.x, (alien->pos.y >> FIX) - alien->anchor.y);
 		break;
 	case 3:
-		drawSprite(background, Alien3_Anim[frameCount/8 % 2], 3, 4, GREEN, x, y);
+		drawSprite(background, Alien3_Anim[frameCount/8 % 2], 3, 4, GREEN, (alien->pos.x >> FIX) - alien->anchor.x, (alien->pos.y >> FIX) - alien->anchor.y);
 		break;
 	}
 }

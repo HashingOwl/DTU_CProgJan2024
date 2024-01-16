@@ -40,15 +40,15 @@ void applyGravity(GravityTarget *body, GravitySource objects[], uint8_t numOfObj
 }
 
 //Returns true if the sqaured distance between vectors p and q are less than radius
-char circleCollision(vector_t *p, vector_t *q, uint32_t *squareDistance){
+char circleCollision(vector_t *p, vector_t *q, uint32_t squareDistance){
 	uint32_t dist = distFIXSquared(p, q, FIX);
-	return dist < *squareDistance;
+	return dist < squareDistance;
 }
 
 //Returns true if the vector pos collides with any of the objects
-char checkCollisions(vector_t *pos, GravitySource sources[], uint8_t numOfSources){
+char checkCollisions(GravityTarget* target, GravitySource sources[], uint8_t numOfSources){
 	for(uint8_t i = 0; i < numOfSources; i++){
-		if(circleCollision(pos, &(sources[i].pos), &(sources[i].squareRadius))){
+		if(circleCollision(&(target->pos), &(sources[i].pos), target->squareRadius + sources[i].squareRadius)){
 			return 1;
 		}
 	}
