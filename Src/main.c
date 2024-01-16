@@ -35,7 +35,7 @@ int main(void)
 	uint32_t frameCount = 0;
 
 	//Ship and gravity objects in game
-	GravityTarget ship = {{100 << FIX, 5<<FIX}, {0x50, 0x50}};
+	GravityTarget ship = {{100 << FIX, 5<<FIX}, {0x20, 0x800}};
 	uint8_t numOfSources = 2;
 	GravitySource sources[2] = {
 			{.pos = {40 << FIX, 50 << FIX}, .squareRadius = 0x3100, .mass = 0x50000000},
@@ -107,7 +107,7 @@ int main(void)
 
 				vector_t shipPrintPos = {(ship.pos.x + shipPrintOffset.x) >> FIX, (ship.pos.y + shipPrintOffset.y) >> FIX};
 
-				drawSprite(currentBackground, Bullet_1, 1, 2, GREEN, shipPrintPos.x, shipPrintPos.y);
+				drawBullet(shipPrintPos.x, shipPrintPos.y, frameCount, currentBackground);
 				cleanRect(backgroundContamination, shipPrintPos.x, shipPrintPos.y, 4, 4);
 				drawCleanBackground(currentBackground, backgroundContamination);
 				resetGrid(backgroundContamination);
