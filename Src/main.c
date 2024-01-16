@@ -224,26 +224,34 @@ void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 //	powerup[nextPowerupNum]
 //}
 
+// Drawing functions
+#define FIX_2_X(a) ((a->pos.x >> FIX) - a->anchor.x)
+#define FIX_2_Y(a) ((a->pos.y >> FIX) - a->anchor.y)
+
 void drawBullet(GravityTarget* bullet, uint32_t frameCount, const uint8_t* background) {
-	drawSprite(background, Bullet_Anim[frameCount/8 % 3], 1, 2, WHITE, (bullet->pos.x >> FIX) - bullet->anchor.x, (bullet->pos.y >> FIX) - bullet->anchor.y);
+	drawSprite(background, Bullet_Anim[frameCount/8 % 3], 1, 2, WHITE, FIX_2_X(bullet), FIX_2_Y(bullet));
 }
 
 void drawAsteroid(GravitySource* asteroid, const uint8_t* background) {
-	drawSprite(background, Asteroid_1, 5, 10, BROWN, (asteroid->pos.x >> FIX) - asteroid->anchor.x, (asteroid->pos.y >> FIX) - asteroid->anchor.y);
+	drawSprite(background, Asteroid_1, 5, 10, BROWN, FIX_2_X(asteroid), FIX_2_Y(asteroid));
 }
 
 void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const uint8_t* background) {
 	switch(alienNum) {
 	case 1:
-		drawSprite(background, Alien1_Anim[frameCount/8 % 2], 3, 4, GREEN, (alien->pos.x >> FIX) - alien->anchor.x, (alien->pos.y >> FIX) - alien->anchor.y);
+		drawSprite(background, Alien1_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
 		break;
 	case 2:
-		drawSprite(background, Alien2_Anim[frameCount/8 % 2], 3, 4, GREEN, (alien->pos.x >> FIX) - alien->anchor.x, (alien->pos.y >> FIX) - alien->anchor.y);
+		drawSprite(background, Alien2_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
 		break;
 	case 3:
-		drawSprite(background, Alien3_Anim[frameCount/8 % 2], 3, 4, GREEN, (alien->pos.x >> FIX) - alien->anchor.x, (alien->pos.y >> FIX) - alien->anchor.y);
+		drawSprite(background, Alien3_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
 		break;
 	}
+}
+
+void drawSentry() {
+
 }
 
 //DISSE SKAL RYKKES TIL EN ANDEN FIL
