@@ -165,6 +165,24 @@ void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 //	powerup[nextPowerupNum]
 //}
 
+void drawBullet(int x, int y, uint32_t frameCount, const uint8_t* background) {
+	drawSprite(background, Bullet_Anim[frameCount/8 % 3], 1, 2, WHITE, x, y);
+}
+
+void drawPlayer(int x, int y, int alienNum, uint32_t frameCount, const uint8_t* background) {
+	switch(alienNum) {
+	case 1:
+		drawSprite(background, Alien1_Anim[frameCount/8 % 2], 3, 4, GREEN, x, y);
+		break;
+	case 2:
+		drawSprite(background, Alien2_Anim[frameCount/8 % 2], 3, 4, GREEN, x, y);
+		break;
+	case 3:
+		drawSprite(background, Alien3_Anim[frameCount/8 % 2], 3, 4, GREEN, x, y);
+		break;
+	}
+}
+
 //DISSE SKAL RYKKES TIL EN ANDEN FIL
 void TIM1_BRK_TIM15_IRQHandler(void) {
 	updateFrame = 1;
