@@ -61,7 +61,7 @@ int main(void)
 	uart_init(1000000);
 	initJoystickAnalog();
 	soundInit();
-	//disableMusic();
+	disableMusic();
 	initTimer15(19, 3600000);
 	//newPowerupCountdown = getPowerupCountdown();
 
@@ -89,8 +89,8 @@ int main(void)
 				readJoystickAnalog(&input.x, &input.y);
 
 				//Update velocity based on input
-				ship.vel.x += input.x >> 1;
-				ship.vel.y += input.y >> 1;
+				ship.vel.x += input.x >> 2;
+				ship.vel.y += input.y >> 3;
 
 				applyGravity(&ship, sources, numOfSources);
 				shipUpdatePosition(&ship, sources, numOfSources);
