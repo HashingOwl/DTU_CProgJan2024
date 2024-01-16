@@ -13,5 +13,6 @@
 void initJoystickAnalog ();
 void readJoystickAnalog();
 uint8_t readJoystickDigital();
+uint8_t readJoystickButtons(void);
 #endif /* _ANSI_H_ */
 
