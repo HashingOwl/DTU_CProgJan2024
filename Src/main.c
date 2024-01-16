@@ -4,12 +4,17 @@
 
 #include "math.h"
 #include "kinematics.h"
-
+#include "io.h"
 #include "soundLib.h"
 
 #include "graphics.h"
 #include "GraphicData.h"
 #include "main.h"
+
+// Game states
+#define MENU 1
+#define PLAYING 2
+#define PAUSED 3
 
 //Set true by interrupt when it is time to make a new frame
 volatile uint8_t updateFrame = 0;
@@ -19,10 +24,13 @@ int8_t collisionCounter = 0;
 
 int main(void)
 {
+	int gameState;
+	gameState = PLAYING;
+	// Used in sprite animations
 	uint32_t frameCount = 0;
 
-	//Ship and gravityobjects in game
-	GravityTarget ship = {{90 << FIX, 90<<FIX}, {4<<(FIX-2), 1<<(FIX-3)}};
+	//Ship and gravity objects in game
+	GravityTarget ship = {{64 << FIX, 64<<FIX}, {0<<(FIX-2), 0<<(FIX-3)}};
 	uint8_t numOfSources = 2;
 	GravitySource sources[2] = {{.pos = {20 << FIX, 20 << FIX}, .squareRadius = 5 << FIX, .mass = 0x50000000}, {.pos = {40 << FIX, 60 << FIX}, .squareRadius = 5 << FIX, .mass = 0x50000000}};
 	uint8_t numOfBullets = 20;
@@ -44,6 +52,9 @@ int main(void)
 	initTimer15(19, 3600000);
 	//newPowerupCountdown = getPowerupCountdown();
 
+	// While using mine joystick as substitute for proper joystick
+	setupJoystickPins();
+
 	//Drawing game
 	drawBackground(BG_Stratosphere_1);
 	drawSprite(BG_Stratosphere_1, Alien1_1, 3, 4, RED, sources[0].pos.x >> FIX, sources[0].pos.y >> FIX);
@@ -52,36 +63,64 @@ int main(void)
 	while(1){
 		if(updateFrame){
 			updateFrame = 0;
-			//newPowerupCountdown--;
+			switch (gameState) {
+//=========================================MENU======================================================
+			case MENU:
 
-			//Getting input from joystick. Passed as reference
-			//vector_t input;
-			//readJoystickAnalog(&input.x, &input.y);
+				break;
+//========================================PLAYING====================================================
+			case PLAYING:
+				//newPowerupCountdown--;
 
-			//Update velocity based on input
-//			ship.vel.x += input.x;
-//			ship.vel.y += input.y;
+				;
+				//Getting input from joystick. Passed as reference
+				vector_t input = {0,0};
+				// Replacement for actual joystick
+				uint8_t joyRead = readJoy();
+				input.y -= ((joyRead & 1) != 0);
+				input.y += ((joyRead & 2) != 0);
+				input.x -= ((joyRead & 4) != 0);
+				input.x += ((joyRead & 8) != 0);
 
-			applyGravity(&ship, sources, numOfSources);
-			shipUpdatePosition(&ship, sources, numOfSources);
-			//bulletUpdatePosition(bullets, numOfBullets);
+				input.x *= 16;
+				input.y *= 16;
 
-			//printVector(&ship.pos);
+				gotoxy(0,0);
+				printf("x: %ld\ty: %ld", input.x, input.y);
 
-			//Draw new graphic. Console coordinates are (ship.pos.x >> FIX, ship.pos.y >> FIX)
-			drawBullet(ship.pos.x >> FIX, ship.pos.y >> FIX, frameCount, BG_Stratosphere_1);
-			cleanRect(backgroundContamination, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
-			drawCleanBackground(BG_Stratosphere_1, backgroundContamination);
-			resetGrid(backgroundContamination);
-			contaminateRect(backgroundContamination, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
+				//readJoystickAnalog(&input.x, &input.y);
 
-//			if(newPowerupCountdown == 0){
+				//Update velocity based on input
+				ship.vel.x += input.x;
+				ship.vel.y += input.y;
+
+				//applyGravity(&ship, sources, numOfSources);
+				shipUpdatePosition(&ship, sources, numOfSources);
+				//bulletUpdatePosition(bullets, numOfBullets);
+
+				//printVector(&ship.pos);
+
+				//Draw new graphic. Console coordinates are (ship.pos.x >> FIX, ship.pos.y >> FIX)
+				drawBullet(ship.pos.x >> FIX, ship.pos.y >> FIX, frameCount, BG_Stratosphere_1);
+				cleanRect(backgroundContamination, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
+				drawCleanBackground(BG_Stratosphere_1, backgroundContamination);
+				resetGrid(backgroundContamination);
+				contaminateRect(backgroundContamination, ship.pos.x >> FIX, ship.pos.y >> FIX, 4, 4);
+
+//				if(newPowerupCountdown == 0){
 //
-//			}
+//				}
 //
-//			for(uint8_t p = 0; p < numOfPowerups; p++){
+//				for(uint8_t p = 0; p < numOfPowerups; p++){
 //
-//			}
+//				}
+				break;
+//========================================PAUSED====================================================
+			case PAUSED:
+
+				break;
+			}
+
 			frameCount++;
 		}
 	}
@@ -117,7 +156,7 @@ void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 
 void shipUpdatePosition(GravityTarget *target, GravitySource sources[], uint8_t numOfSources){
 	vector_t newPos = addVectors(&(target->vel), &(target->pos));
-	clampVector(&newPos, 0, WIDTH << FIX - 1); //Keep body within bounds
+	clampVector(&newPos, 1, (WIDTH << FIX) - 12); //Keep body within bounds
 
 	if(checkCollisions(&newPos, sources, numOfSources)){
 		target -> vel.x = 0;
