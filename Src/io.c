@@ -98,9 +98,9 @@ uint8_t readJoy(){
 	return joy;
 }
 
-void setLED(uint8_t color){  //..0RGB
-	color = ~color;
-	setPinValue(LED_R, (color & (1 << 2)));
-	setPinValue(LED_G, (color & (1 << 1)));
-	setPinValue(LED_B, (color & 1));
-}
+//void setLED(uint8_t color){  //..0RGB
+//	color = ~color;
+//	setPinValue(LED_R, (color & (1 << 2)));
+//	setPinValue(LED_G, (color & (1 << 1)));
+//	setPinValue(LED_B, (color & 1));
+//}

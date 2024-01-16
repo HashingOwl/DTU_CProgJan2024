@@ -27,4 +27,4 @@ enum joy1Dir {
     joy1CENTER = 0b10000
 };
 uint8_t readJoy();
-void setLED(uint8_t color);
+//void setLED(uint8_t color);
