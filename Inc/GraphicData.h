@@ -30,7 +30,7 @@ extern const uint8_t Bullet_2[1*2];
 extern const uint8_t Bullet_3[1*2];
 
 //-----Asteroid-----
-extern const uint8_t Asteroid_1[4*8];
+extern const uint8_t Asteroid_1[5*10];
 
 //------Alien1------
 extern const uint8_t Alien1_1[3*6];

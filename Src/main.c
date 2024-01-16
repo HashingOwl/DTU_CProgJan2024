@@ -64,8 +64,8 @@ int main(void)
 	// Asteroids creating gravity
 	uint8_t numAsteroids = 2;
 	GravitySource asteroids[2] = {
-			{.pos = {36 << FIX, 36 << FIX}, .anchor = {8, 8}, .radius = 10 << FIX, .mass = 80 << 12},
-			{.pos = {92 << FIX, 92 << FIX}, .anchor = {8, 8}, .radius = 10 << FIX, .mass = 80 << 12}};
+			{.pos = {36 << FIX, 36 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
+			{.pos = {92 << FIX, 92 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12}};
 	uint8_t numBullets = 20;
 	GravityTarget bullets[20] = {};
 
@@ -229,7 +229,7 @@ void drawBullet(GravityTarget* bullet, uint32_t frameCount, const uint8_t* backg
 }
 
 void drawAsteroid(GravitySource* asteroid, const uint8_t* background) {
-	drawSprite(background, Asteroid_1, 4, 8, YELLOW, (asteroid->pos.x >> FIX) - asteroid->anchor.x, (asteroid->pos.y >> FIX) - asteroid->anchor.y);
+	drawSprite(background, Asteroid_1, 5, 10, BROWN, (asteroid->pos.x >> FIX) - asteroid->anchor.x, (asteroid->pos.y >> FIX) - asteroid->anchor.y);
 }
 
 void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const uint8_t* background) {

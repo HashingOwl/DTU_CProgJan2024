@@ -34,6 +34,7 @@
 #define BLACK 0
 #define RED 1
 #define GREEN 2
+#define BROWN 3
 #define BLUE 4
 #define PURPLE 5
 #define GRAY 7
