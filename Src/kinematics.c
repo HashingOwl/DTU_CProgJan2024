@@ -14,7 +14,7 @@ void applyGravity(vector_t pos, vector_t* vel, GravitySource objects[], uint8_t 
 	// Iterate through each object
 	for (uint8_t i = 0; i < numOfObj; ++i){
 		//Squared Distance from body to object. An offset is added to prevent VERY large numbers when close.
-		uint32_t distanceSquared = distFIXSquared(&pos, &objects[i].pos, 10) + 0x400;
+		uint32_t distanceSquared = distFIXSquared(&pos, &objects[i].pos, 8) + 0x400;
 		if(distanceSquared < (0x6200 * 0x6200) >> 8){ //Distance less than 50
 			int32_t gravForceMagnitude = objects[i].mass / distanceSquared;
 
@@ -26,8 +26,8 @@ void applyGravity(vector_t pos, vector_t* vel, GravitySource objects[], uint8_t 
 			forceVector.y *= gravForceMagnitude;
 
 			//The force is scaled down significantly
-			forceVector.x >>= 24;
-			forceVector.y >>= 24;
+			forceVector.x >>= 23;
+			forceVector.y >>= 23;
 
 			// Update body's velocity
 			vel-> x += forceVector.x;
