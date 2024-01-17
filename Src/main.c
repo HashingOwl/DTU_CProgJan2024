@@ -41,6 +41,7 @@ int main(void)
 {
 	// Init modules
 	uart_init(1000000);
+
 	initJoystickAnalog();
 	soundInit();
 	disableMusic();
