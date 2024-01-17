@@ -47,6 +47,9 @@ uint32_t dotFIX(vector_t* a, vector_t* b);
 uint32_t distFIXSquared(vector_t *p, vector_t *q, uint8_t shift);
 int32_t sine(int16_t n);
 int32_t cosi(int16_t n);
+
+void setRNGSeed(uint32_t seed);
+uint16_t rand16bit();
 //Pseudo random number generation
 uint8_t random8bit();
 #endif /* MATH_H_ */
