@@ -54,7 +54,7 @@ int main(void)
 	// Used in sprite animations
 	uint32_t frameCount = 0;
 
-	//Ship and gravity objects in game
+	//PLAYER ShipSHIP
 	GravityTarget ship = {
 			.pos = {64 << FIX, 64<<FIX},
 			.vel = {0, 0},
@@ -64,10 +64,19 @@ int main(void)
 	// Asteroids creating gravity
 	uint8_t numAsteroids = 2;
 	GravitySource asteroids[2] = {
-			{.pos = {36 << FIX, 36 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
-			{.pos = {92 << FIX, 92 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12}};
+			{.pos = {36 << FIX, 36 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 0x50000000},
+			{.pos = {92 << FIX, 92 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 0x50000000}};
 	uint8_t numBullets = 20;
 	GravityTarget bullets[20] = {};
+
+	//Enemies
+	vector_t enemies[2] = {
+			{20 << FIX, 20 << FIX},
+			{80 << FIX, 80 << FIX},
+	};
+	uint8_t numOfEnemies = 2;
+	int16_t enemyShootResetValue = 20 * 5; // 20 * seconds between shoot
+	int16_t enemyShootCountdown = enemyShootResetValue;
 
 	//Console and graphic
 	//int32_t gameSize = consoleSize << FIX;
@@ -98,6 +107,8 @@ int main(void)
 				break;
 //=========================================PLAYING======================================================
 			case PLAYING:;
+				enemyShootCountdown--;
+
 				//-------------------INPUT----------------------------------
 				//Getting input from joystick. Passed as reference
 				vector_t input = {0, 0};
@@ -109,16 +120,14 @@ int main(void)
 				input.x -= ((joyVal & 4) != 0) * 20;
 				input.x += ((joyVal & 8) != 0) * 20;
 
-				//------------------PHYSICS---------------------------------
-
+				//------------------PLAYER PHYSICS---------------------------------
 				//Update velocity based on input
 				ship.vel.x += input.x;
 				ship.vel.y += input.y;
 
 				applyGravity(&ship, asteroids, numAsteroids);
-
 				shipUpdatePosition(&ship);
-				bulletUpdatePosition(bullets, numBullets);
+
 
 				// Player-Bounds collision
 				if(outOfBounds(ship.pos.x, 	ship.radius + BORDER_PAD, U_WIDTH - ship.radius - BORDER_PAD)) {
@@ -147,6 +156,24 @@ int main(void)
 					}
 				}
 
+				// --------------------------BULLETS--------------------------------
+				//bulletUpdatePosition(bullets, numOfBullets, &ship.pos, asteroids, numOfAsteroids);
+				//drawAllBullets(bullets, numOfBullets, &bulletPrintOffset, frameCount, currentBackground);
+
+				if(!enemyShootCountdown){
+					generateBullets(bullets, numBullets, enemies, numOfEnemies, &ship.pos);
+					enemyShootCountdown = enemyShootResetValue;
+				}
+
+				//--------------------------POWERUPS---------------------------------
+				//if(newPowerupCountdown == 0){
+				//
+				//}
+				//
+				//for(uint8_t p = 0; p < numOfPowerups; p++){
+				//
+				//}
+
 				//-------------------Drawing--------------------------------
 				// Player
 				drawAlien(&ship, 1, frameCount, currentBackground);
@@ -163,13 +190,6 @@ int main(void)
 				// Player
 				contaminateRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
 
-//				if(newPowerupCountdown == 0){
-//
-//				}
-//
-//				for(uint8_t p = 0; p < numOfPowerups; p++){
-//
-//				}
 				break;
 //=========================================PAUSED======================================================
 			case PAUSED:
@@ -184,29 +204,7 @@ void shipUpdatePosition(GravityTarget *ship){
 	ship->pos = addVectors(&(ship->pos), &(ship->vel));
 }
 
-// Things removed from this function
-/*
- 	 vector_t newPos = addVectors(&(target->vel), &(target->pos));
-	target -> pos = newPos;
-
-	clamp(&(newPos.x), target->radius + BORDER_PAD, U_WIDTH - BORDER_PAD); //Keep body within bounds
-	clamp(&(newPos.y), target->radius + BORDER_PAD, U_HEIGHT - BORDER_PAD); //Keep body within bounds
-
- 	if(outOfBounds(newPos.x, MIN_X, MAX_X))
-		target->vel.x = 0;
-	if(outOfBounds(newPos.y, MIN_Y, MAX_Y))
-		target->vel.y = 0;
-
-	if(checkCollisions(&newPos, sources, numOfSources)){
-		target -> vel.x = 0;
-		target -> vel.y = 0;
-		//MORE CODE TO HANDLE COLLISION
-		//Eg. loose af life. Decrease score. Play animation
-	}
- */
-
-
-
+//-----------------------------------BULLETS------------------------------------------------------
 void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 	for(uint8_t i = 0; i < numOfBullets; i++){
 		if(bullets[i].isActive){
@@ -216,6 +214,44 @@ void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 	}
 }
 
+void drawAllBullets(bullet bullets[], uint8_t numOfBullets, vector_t* offset, uint32_t frameCount, uint8_t* background){
+	for(uint8_t i = 0; i < numOfBullets; i++){
+		if(bullets[i].isActive){
+			drawBullet(&bullets[i], frameCount, background);
+		}
+	}
+}
+void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[], uint8_t numOfEnemies, vector_t *playerPos){
+	uint8_t bulletIndex = 0;
+	vector_t vel;
+	for(uint8_t i = 0; i < numOfEnemies; i++){
+		bullets[bulletIndex].isActive = 1;
+		bullets[bulletIndex].pos = enemies[i];
+		vel.x = 0x100; vel.y = 0x100;
+		bullets[bulletIndex].vel = vel;
+		bulletIndex++;
+
+		bullets[bulletIndex].isActive = 1;
+		bullets[bulletIndex].pos = enemies[i];
+		vel.x = -0x100; vel.y = 0x100;
+		bullets[bulletIndex].vel = vel;
+		bulletIndex++;
+
+		bullets[bulletIndex].isActive = 1;
+		bullets[bulletIndex].pos = enemies[i];
+		vel.x = 0x100; vel.y = -0x100;
+		bullets[bulletIndex].vel = vel;
+		bulletIndex++;
+
+		bullets[bulletIndex].isActive = 1;
+		bullets[bulletIndex].pos = enemies[i];
+		vel.x = -0x100; vel.y = -0x100;
+		bullets[bulletIndex].vel = vel;
+		bulletIndex++;
+	}
+}
+
+//----------------------------------POWERUPS-----------------------------------
 //inline int16_t getPowerupCountdown(){
 //	return 200 + random8bit();
 //}
@@ -224,11 +260,11 @@ void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
 //	powerup[nextPowerupNum]
 //}
 
-// Drawing functions
+//--------------------------------DRAWING FUNCITONS---------------------------------------------
 #define FIX_2_X(a) ((a->pos.x >> FIX) - a->anchor.x)
 #define FIX_2_Y(a) ((a->pos.y >> FIX) - a->anchor.y)
 
-void drawBullet(GravityTarget* bullet, uint32_t frameCount, const uint8_t* background) {
+void drawBullet(bullet* bullet, uint32_t frameCount, const uint8_t* background){
 	drawSprite(background, Bullet_Anim[frameCount/8 % 3], 1, 2, WHITE, FIX_2_X(bullet), FIX_2_Y(bullet));
 }
 
@@ -254,7 +290,7 @@ void drawSentry() {
 
 }
 
-//DISSE SKAL RYKKES TIL EN ANDEN FIL
+//----------------------------------FRAME TIMER---------------------------------
 void TIM1_BRK_TIM15_IRQHandler(void) {
 	updateFrame = 1;
 	TIM15->SR &= ~0x0001; // Clear interrupt bit
