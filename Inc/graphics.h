@@ -21,9 +21,6 @@
 #include "GraphicData.h"
 #include <string.h>
 
-#define WIDTH 128
-#define HEIGHT 64
-
 #define ESC 0x1B
 
 #define PIX_NONE 32
@@ -50,15 +47,15 @@ void bgcolor(uint8_t background);
 void color(uint8_t foreground, uint8_t background);
 uint8_t getTopPaddedByte(const uint8_t* imageData, uint8_t byteIndex);
 uint8_t getBottomPaddedByte(const uint8_t* imageData, uint8_t byteIndex);
-uint8_t getByteAtPos(const uint8_t* imageData, uint8_t xPos, uint8_t yPos, uint8_t width);
+uint8_t getByteAtPos(const uint8_t* imageData, int xPos, int yPos, int width);
 void drawBgChar(uint8_t byte, uint8_t i);
 void drawBgChar16(uint16_t byte, uint8_t i);
 void drawBackground(const uint8_t* background);
 void drawSpriteByte(uint8_t spriteByte, uint8_t bgByte, uint8_t spriteColor);
-void drawSprite(const uint8_t* background, const uint8_t* spriteData, uint8_t spriteWidth, uint8_t spriteHeight, uint8_t spriteColor, uint8_t xPos, uint8_t yPos);
+void drawSprite(const uint8_t* background, const uint8_t* spriteData, int spriteWidth, int spriteHeight, uint8_t spriteColor, int xPos, int yPos);
 void resetGrid(uint8_t* grid);
-void contaminateRect(uint8_t* grid, uint8_t x, uint8_t y, uint8_t w, uint8_t h);
-void cleanRect(uint8_t* grid, uint8_t x, uint8_t y, uint8_t w, uint8_t h);
+void contaminateRect(uint8_t* grid, int x, int y, int w, int h);
+void cleanRect(uint8_t* grid, int x, int y, int w, int h);
 void drawCleanBackground(const uint8_t* background, uint8_t* cleanGrid);
 
 #endif /* GRAPHICS_H_ */
