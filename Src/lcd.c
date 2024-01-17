@@ -122,7 +122,7 @@ void drawLCD(uint8_t buffer[]) {
 	lcd_push_buffer(buffer);
 }
 
-//Takes same translates from usual format
+//Takes sprite and translates from usual format to LCD format
 void addLCDbuffer(uint8_t* buffer,const uint8_t spirteData[], uint16_t spirteWidth, uint16_t spriteHeight, uint16_t x, uint16_t y) {
 	uint16_t yCoord,xCoord;
 	for (uint16_t i=0; i<spirteWidth;i++){
