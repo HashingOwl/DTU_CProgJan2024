@@ -106,6 +106,17 @@ uint32_t distFIXSquared(vector_t *p, vector_t *q, uint8_t shift){
 	return ((q -> x - p -> x) * (q -> x - p -> x) + (q -> y - p -> y) * (q -> y - p -> y)) >> shift;
 }
 
+uint32_t next = 1;
+void setRNGSeed(uint32_t seed){
+	next = seed;
+}
+uint16_t rand16bit()
+{
+    next = next * 1103515243 + 12345;
+    return (next >> 16) & 0x7fff;
+}
+
+
 //Pseudo-random number generation
 uint16_t P1  = 0x3FF; // Register 1
 uint16_t P2  = 0x3FF; // Register 2

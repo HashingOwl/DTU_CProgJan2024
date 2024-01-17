@@ -6,6 +6,7 @@
 #include "kinematics.h"
 #include "io.h"
 #include "soundLib.h"
+#include "LED.h"
 
 #include "graphics.h"
 #include "GraphicData.h"
@@ -41,11 +42,13 @@ int main(void)
 {
 	// Init modules
 	uart_init(1000000);
-	initBossScreen();
+	//initBossScreen();
 	initJoystickAnalog();
 	soundInit();
 	disableMusic();
 	initTimer15(19, 3600000);
+
+	initLED();
 
 	// While using mini joystick as substitute for proper joystick
 	setupJoystickPins();
@@ -55,6 +58,9 @@ int main(void)
 	// Used in sprite animations
 	uint32_t frameCount = 0;
 
+	uint8_t aliensDead = 0;
+	const uint8_t maxAliensDead = 3;
+
 	//PLAYER Ship
 	vector_t playerStartPos = {100 << FIX, 10<<FIX};
 	GravityTarget ship = {
@@ -62,10 +68,12 @@ int main(void)
 			.vel = {0, 0},
 			.anchor = {6, 4},
 			.radius = 5 << FIX};
-	uint8_t maxLives = 5;
-	uint8_t livesLeft = 5;
+	uint8_t playerHit = 0;
+	uint8_t maxLives = 2;
+	uint8_t livesLeft = maxLives;
+	uint8_t currentAlien = 1;
 
-	uint8_t shipsThrough = 0;
+	uint8_t aliensThrough = 0;
 
 	// Asteroids creating gravity
 	uint8_t numAsteroids = 7;
@@ -82,9 +90,8 @@ int main(void)
 
 	uint8_t numBullets = 20;
 	bullet bullets[20] = {};
-
-	//Set to number > 0 corresponding to the number of frames the collision animation and effect takes. Decreased at every frame if > 0.
-	int8_t collisionCounter = 0;
+	uint16_t bulletSpeed = 0x180;
+	uint16_t bulletSpeedIncrease = 0x50;
 
 	//Enemies
 	vector_t enemies[2] = {
@@ -95,6 +102,14 @@ int main(void)
 	int16_t enemyShootResetValue = 20 * 5; // 20 * seconds between shoot
 	int16_t enemyShootCountdown = enemyShootResetValue;
 
+	//Powerups
+	char RNGSeedSet = 0;
+	uint16_t powerupResetValue = 20*10;
+	uint16_t powerupCountdown = 100;
+	powerup powerups[4] = {};
+	uint8_t numPowerups = 4;
+
+
 	//Console and graphic
 	//int32_t gameSize = consoleSize << FIX;
 	uint8_t backgroundContamination[P_WIDTH * P_HEIGHT / 8] = {};
@@ -104,6 +119,7 @@ int main(void)
 
 	// INITIALISATION DRAWING: Should be made whenever we set the gamemode to PLAYING
 	drawBackground(currentBackground);
+	setLEDToIndicateHealth(livesLeft);
 
 	gotoxy(0, 0);
 
@@ -129,6 +145,9 @@ int main(void)
 //=========================================PLAYING======================================================
 			case PLAYING:;
 				enemyShootCountdown--;
+				powerupCountdown--;
+				if(playerHit > 0)
+					playerHit--;
 
 				//-------------------INPUT----------------------------------
 				//Getting input from joystick. Passed as reference
@@ -163,11 +182,14 @@ int main(void)
 
 				//WIN CONDITION - Check if player hits bottom.
 				if(ship.pos.y > U_WIDTH - ship.radius - BORDER_PAD){
-					//Todo implement win-condition
-					shipsThrough++;
-					ship.pos = playerStartPos;
-					ship.vel.x = 0;
-					ship.vel.y = 0;
+					aliensThrough++;
+					bulletSpeed += bulletSpeedIncrease;
+					livesLeft = maxLives;
+					setLEDToIndicateHealth(livesLeft);
+
+					//TODO ALBERT print new score
+
+					makeNewAlien(&ship, &playerStartPos, &currentAlien);
 				}
 
 				// Player-Asteroids collision
@@ -193,11 +215,18 @@ int main(void)
 				}
 				bulletUpdatePosition(bullets, numBullets, asteroids, numAsteroids);
 				if(bulletHitPlayer(&ship.pos, bullets, numBullets)){
-					collisionCounter = 10;
 					livesLeft--;
+					playerHit = 25;
 					if(livesLeft == 0){
-						//todo implement what happens when no more lives.
+						aliensDead++;
+						livesLeft = maxLives;
+
+						makeNewAlien(&ship, &playerStartPos, &currentAlien);
+						if(aliensDead == maxAliensDead){
+							gameState = MENU;
+						}
 					}
+					setLEDToIndicateHealth(livesLeft);
 				}
 				drawAllBullets(bullets, numBullets, frameCount, currentBackground);
 
@@ -209,22 +238,35 @@ int main(void)
 				}
 
 				if(!enemyShootCountdown){
-					generateBullets(bullets, numBullets, enemies, numOfEnemies, &ship.pos);
+					generateBullets(bullets, numBullets, enemies, numOfEnemies, &ship.pos, bulletSpeed);
 					enemyShootCountdown = enemyShootResetValue;
 				}
 
 				//--------------------------POWERUPS---------------------------------
-				//if(newPowerupCountdown == 0){
-				//
-				//}
-				//
-				//for(uint8_t p = 0; p < numOfPowerups; p++){
-				//
-				//}
+				//Generating powerups
+				if(powerupCountdown == 0){
+					powerupCountdown = powerupResetValue;
+					if(!RNGSeedSet){
+						RNGSeedSet = 1;
+						setRNGSeed((ship.pos.x & 0x000000FF) * (ship.pos.y & 0x000000FF)); //Semi random way to initialize RNG
+					}
+					generateNewPowerup(powerups, numPowerups);
+					powerupCountdown = getPowerupCountdown();
+				}
+
+				//Checking for colliossn with powerups
+				for(uint8_t p = 0; p < numPowerups; p++){
+					if(circleCollision(&powerups[p].pos, &ship.pos, 0xF00)){
+						powerups[p].isActive = 0;
+						//todo ROALD remove powerup;
+						//todo ROALD apply powerup effect;
+							//If necessary also make check for end of powerup
+					}
+				}
 
 				//-------------------Drawing--------------------------------
 				// Player
-				drawAlien(&ship, 1, frameCount, currentBackground);
+				drawAlien(&ship, currentAlien, frameCount, currentBackground, playerHit);
 				cleanRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
 
 				// Clean Background
@@ -259,6 +301,16 @@ int main(void)
 void shipUpdatePosition(GravityTarget *ship){
 	ship->pos = addVectors(&(ship->pos), &(ship->vel));
 }
+void makeNewAlien(GravityTarget *ship, vector_t *startPos, uint8_t* currentAlien){
+	ship->pos = *startPos;
+
+	ship->vel.y = 0;
+	ship->vel.y = 0;
+
+	(*currentAlien)++;
+	if(*currentAlien == 4)
+		*currentAlien = 1;
+}
 
 //-----------------------------------BULLETS------------------------------------------------------
 void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource asteroids[], uint8_t numAsteroids){
@@ -291,7 +343,7 @@ char bulletHitPlayer(vector_t* playerPos, bullet bullets[], uint8_t numBullets){
 	for (uint8_t i = 0; i < numBullets; i++)
 	{
 		if(bullets[i].isActive){
-			if(circleCollision(playerPos, &bullets[i].pos, 0x900)){
+			if(circleCollision(playerPos, &bullets[i].pos, 0x1900)){
 				hit = 1;
 				bullets[i].isActive = 0;
 			}
@@ -307,7 +359,7 @@ void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount,
 		}
 	}
 }
-void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[], uint8_t numOfEnemies, vector_t *playerPos){
+void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[], uint8_t numOfEnemies, vector_t *playerPos, uint16_t bulletSpeed){
 	for(uint8_t i = 0; i < numOfEnemies; i++){
 		if(!bullets[i].isActive){
 			bullets[i].isActive = 1;
@@ -317,19 +369,32 @@ void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[],
 			bullets[i].anchor.y = 2;
 			vector_t direction = subtractVectors(playerPos, &enemies[i]);
 			direction = normalizeFIXVector(&direction);
-			bullets[i].vel = multFIXVector(&direction, 0x200);
+			bullets[i].vel = multFIXVector(&direction, bulletSpeed);
 		}
 	}
 }
 
 //----------------------------------POWERUPS-----------------------------------
-//inline int16_t getPowerupCountdown(){
-//	return 200 + random8bit();
-//}
-//void generateNewPowerup(powerup *powerup, uint8_t nextPowerupNum){
-//	powerup newPowerup;
-//	powerup[nextPowerupNum]
-//}
+int16_t getPowerupCountdown(){
+	return 60 + (rand16bit() >> 10);
+}
+void generateNewPowerup(powerup powerups[], uint8_t numPowerups){
+	for(uint8_t i = 0; i < numPowerups; i++){
+		if(!powerups[i].isActive){
+			powerups[i].framesLeft = 60 + (rand16bit() >> 10);
+			powerups[i].pos.x = FIXMUL(rand16bit(), 0x170) + 0x600; //These are magic numbers to ensure the powerups are generated within bounds
+			powerups[i].pos.y = FIXMUL(rand16bit(), 0x170) + 0x600;
+			powerups[i].isActive = 1;
+
+			//TODO VALDEMAR print powerup
+			gotoxy(powerups[i].pos.x >> FIX, powerups[i].pos.y >> (FIX + 1));
+			fgcolor(RED);
+			bgcolor(WHITE);
+			printf("X");
+			break;
+		}
+	}
+}
 
 //--------------------------------DRAWING FUNCITONS---------------------------------------------
 
@@ -341,22 +406,33 @@ void drawAsteroid(GravitySource* asteroid, const uint8_t* background) {
 	drawSprite(background, Asteroid_1, 5, 10, BROWN, FIX_2_X(asteroid), FIX_2_Y(asteroid));
 }
 
-void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const uint8_t* background) {
+void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const uint8_t* background, uint8_t playerHit) {
 	switch(alienNum) {
 	case 1:
-		drawSprite(background, Alien1_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
+		drawSprite(background, playerHit ? Alien1_Dead: Alien1_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
 		break;
 	case 2:
-		drawSprite(background, Alien2_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
+		drawSprite(background, playerHit ? Alien2_Dead: Alien2_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
 		break;
 	case 3:
-		drawSprite(background, Alien3_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
+		drawSprite(background, playerHit ? Alien3_Dead: Alien3_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
 		break;
 	}
 }
 
 void drawSentry(GravitySource* sentry, const uint8_t* background) {
 
+}
+
+//----------------------------------LED-----------------------------------------
+void setLEDToIndicateHealth(uint8_t livesLeft){
+
+	if(livesLeft == 2)
+		setLED(2); //Green
+	else if(livesLeft == 1)
+		setLED(1); //Red
+	else
+		setLED(5); //Pink unlimited health
 }
 
 //----------------------------------FRAME TIMER---------------------------------
