@@ -11,7 +11,7 @@
 #include "graphics.h"
 #include "GraphicData.h"
 #include "main.h"
-
+#include "Highscore.h"
 // Game states
 #define MENU 1
 #define PLAYING 2
@@ -123,13 +123,8 @@ int main(void)
 
 	gotoxy(0, 0);
 
-	/*
-	// Asteroids
-	for (int i = 0; i < numAsteroids; i++) {
-		drawAsteroid(&asteroids[i], currentBackground);
-		// Delay - without this it doesn't work for mysterious reasons.
-		for (uint32_t i = 0; i < 360000; i++);
-	}*/
+
+
 
 	gotoxy(0,0);
 
@@ -148,9 +143,7 @@ int main(void)
 			switch (gameState) {
 //==========================================MENU========================================================
 			case MENU:
-				currentBackground = MainMenuBG;
 				joyVal = readJoystickDigital();
-				printf("%d",readJoystickButtons());
 				if (joyVal != joyValPrev) {
 					for(uint8_t i = 0;i < 2; i++){
 						contaminateRect(backgroundContamination,46+i*95,90+currSelectionMainMenu*38,12,12);
@@ -183,11 +176,21 @@ int main(void)
 					switch(currSelectionMainMenu) {
 						//Goto game
 						case 0:
+							//TODO add reset here.
+							currentBackground = BG_Stratosphere_2;
+							drawBackground(currentBackground);
+							// Asteroids
+							for (int i = 0; i < numAsteroids; i++) {
+								drawAsteroid(&asteroids[i], currentBackground);
+								// Delay - without this it doesn't work for mysterious reasons.
+								for (uint32_t i = 0; i < 360000; i++);
+							}
 							gameState = PLAYING;
 							break;
 						//Goto help screen
 						case 1:
-							drawBackground(BG_Stratosphere_2); //TODO tilføj den rigtige skærm for help
+							currentBackground = BG_Stratosphere_2;
+							drawBackground(currentBackground);//TODO tilføj den rigtige skærm for help
 							gameState = HELP;
 							break;
 						//Dis/en-able sound
@@ -205,6 +208,13 @@ int main(void)
 			case PLAYING:
 				enemyShootCountdown--;
 				powerupCountdown--;
+
+				//If button to enter main menu is hit go to main menu
+				if (readJoystickButtons() & 0) {
+					currentBackground=MainMenuBG;
+					drawBackground(currentBackground);
+				}
+
 				if(playerHit > 0)
 					playerHit--;
 
@@ -350,8 +360,10 @@ int main(void)
 			case HELP:
 				// Check for input, showing either boss_bakcground, or changing state to MENU or PLAYING
 				if (readJoystickButtons() && buttonLift) {
+					//TODO tilføj at gemme score.
 					buttonLift = 0;
-					drawBackground(MainMenuBG); //TODO tilføj den rigtige skærm
+					currentBackground = MainMenuBG;
+					drawBackground(currentBackground);
 					gameState = MENU;
 				}
 				else if (readJoystickButtons() == 0){
