@@ -87,7 +87,7 @@ void soundInit(void) {
 	TIM2->CCMR2 |= TIM_OCMode_PWM1; // Set output mode to PWM1
 	TIM2->CCMR2 &= ~TIM_CCMR2_OC3PE;
 	TIM2->CCMR2 |= TIM_OCPreload_Enable;
-	TIM2->CCR3 = 32 / 2; // Set duty cycle to 50 %
+	TIM2->CCR3 = 0; // Set duty cycle to 50 %
 
 	RCC->AHBENR |= RCC_AHBPeriph_GPIOB;	// Enable clock for GPIO Port B
 	GPIOB->MODER |= (0x02 << (10 * 2));
