@@ -164,6 +164,13 @@ int main(void)
 				bulletUpdatePosition(bullets, numBullets, asteroids, numAsteroids);
 				drawAllBullets(bullets, numBullets, frameCount, currentBackground);
 
+				// Clean Bullets
+				for (int i = 0; i < numBullets; i++) {
+					if (bullets[i].isActive) {
+						cleanRect(backgroundContamination, (bullets[i].pos.x >> FIX) - bullets[i].anchor.x, (bullets[i].pos.y >> FIX) - bullets[i].anchor.y, 4, 4);
+					}
+				}
+
 				if(!enemyShootCountdown){
 					generateBullets(bullets, numBullets, enemies, numOfEnemies, &ship.pos);
 					enemyShootCountdown = enemyShootResetValue;
