@@ -20,6 +20,9 @@
 #define BORDER_PAD 	(2 << FIX)
 #define U_WIDTH 	(WIDTH << FIX)
 #define U_HEIGHT 	(HEIGHT * 2 << FIX)
+
+#define FIX_2_X(a) ((a->pos.x >> FIX) - a->anchor.x)
+#define FIX_2_Y(a) ((a->pos.y >> FIX) - a->anchor.y)
 /*
 #define MIN_X 0x200 //2.00
 #define MAX_X 0x7B00 //123.00
@@ -82,7 +85,7 @@ int main(void)
 	//int32_t gameSize = consoleSize << FIX;
 	uint8_t backgroundContamination[WIDTH * HEIGHT / 8] = {};
 	// Not actually a constant, it can be changed in software. It's a pointer to a constant.
-	const uint8_t* currentBackground = BG_Stratosphere_1;
+	uint8_t* currentBackground = BG_Stratosphere_1;
 
 	// INITIALISATION DRAWING: Shoudl be made whenever we set the gamemode to PLAYING
 	drawBackground(currentBackground);
@@ -157,11 +160,11 @@ int main(void)
 				}
 
 				// --------------------------BULLETS--------------------------------
-				//bulletUpdatePosition(bullets, numOfBullets, &ship.pos, asteroids, numOfAsteroids);
-				//drawAllBullets(bullets, numOfBullets, &bulletPrintOffset, frameCount, currentBackground);
+				bulletUpdatePosition(&bullets, numBullets, asteroids, numAsteroids);
+				drawAllBullets(&bullets, numBullets, frameCount, currentBackground);
 
 				if(!enemyShootCountdown){
-					generateBullets(bullets, numBullets, enemies, numOfEnemies, &ship.pos);
+					generateBullets(&bullets, numBullets, enemies, numOfEnemies, &ship.pos);
 					enemyShootCountdown = enemyShootResetValue;
 				}
 
@@ -187,8 +190,8 @@ int main(void)
 				gotoxy(0,1); printf("%4ld", debug2);
 
 				//------------Contaminate-for-next-frame--------------------
-				// Player
 				contaminateRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
+				// Player
 
 				break;
 //=========================================PAUSED======================================================
@@ -205,16 +208,32 @@ void shipUpdatePosition(GravityTarget *ship){
 }
 
 //-----------------------------------BULLETS------------------------------------------------------
-void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets){
+void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource asteroids[], uint8_t numAsteroids){
 	for(uint8_t i = 0; i < numOfBullets; i++){
 		if(bullets[i].isActive){
 			bullets[i].pos.x += bullets[i].vel.x;
 			bullets[i].pos.y += bullets[i].vel.y;
+
+			//Asteroid collision
+			for(uint8_t a = 0; a < numAsteroids; a++){
+				if(circleCollision(&bullets[i].pos, &asteroids[a].pos, (asteroids[a].radius * asteroids[a].radius >> FIX))){
+					bullets[i].isActive = 0;
+					break;
+				}
+			}
+
+			//Out of bounds
+			if(outOfBounds(bullets[i].pos.x, 1 << FIX, 123 << FIX)) {
+				bullets[i].isActive = 0;
+			}
+			else if(outOfBounds(bullets[i].pos.y, 1 << FIX, 123 << FIX)) {
+				bullets[i].isActive = 0;
+			}
 		}
 	}
 }
 
-void drawAllBullets(bullet bullets[], uint8_t numOfBullets, vector_t* offset, uint32_t frameCount, uint8_t* background){
+void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount, uint8_t* background){
 	for(uint8_t i = 0; i < numOfBullets; i++){
 		if(bullets[i].isActive){
 			drawBullet(&bullets[i], frameCount, background);
@@ -222,32 +241,13 @@ void drawAllBullets(bullet bullets[], uint8_t numOfBullets, vector_t* offset, ui
 	}
 }
 void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[], uint8_t numOfEnemies, vector_t *playerPos){
-	uint8_t bulletIndex = 0;
-	vector_t vel;
 	for(uint8_t i = 0; i < numOfEnemies; i++){
-		bullets[bulletIndex].isActive = 1;
-		bullets[bulletIndex].pos = enemies[i];
-		vel.x = 0x100; vel.y = 0x100;
-		bullets[bulletIndex].vel = vel;
-		bulletIndex++;
-
-		bullets[bulletIndex].isActive = 1;
-		bullets[bulletIndex].pos = enemies[i];
-		vel.x = -0x100; vel.y = 0x100;
-		bullets[bulletIndex].vel = vel;
-		bulletIndex++;
-
-		bullets[bulletIndex].isActive = 1;
-		bullets[bulletIndex].pos = enemies[i];
-		vel.x = 0x100; vel.y = -0x100;
-		bullets[bulletIndex].vel = vel;
-		bulletIndex++;
-
-		bullets[bulletIndex].isActive = 1;
-		bullets[bulletIndex].pos = enemies[i];
-		vel.x = -0x100; vel.y = -0x100;
-		bullets[bulletIndex].vel = vel;
-		bulletIndex++;
+		if(!bullets[i].isActive){
+			bullets[i].pos = enemies[i];
+			bullets[i].isActive = 1;
+			vector_t direction = subtractVectors(playerPos, &enemies[i]);
+			bullets[i].vel = normalizeFIXVector(&direction);
+		}
 	}
 }
 
@@ -261,8 +261,6 @@ void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[],
 //}
 
 //--------------------------------DRAWING FUNCITONS---------------------------------------------
-#define FIX_2_X(a) ((a->pos.x >> FIX) - a->anchor.x)
-#define FIX_2_Y(a) ((a->pos.y >> FIX) - a->anchor.y)
 
 void drawBullet(bullet* bullet, uint32_t frameCount, const uint8_t* background){
 	drawSprite(background, Bullet_Anim[frameCount/8 % 3], 1, 2, WHITE, FIX_2_X(bullet), FIX_2_Y(bullet));

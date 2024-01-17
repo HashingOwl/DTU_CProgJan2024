@@ -25,14 +25,14 @@ void TIM1_BRK_TIM15_IRQHandler(void);
 
 void initTimer15(uint16_t prescale, uint32_t reloadValue);
 
-void bulletUpdatePosition(GravityTarget bullets[], uint8_t numOfBullets);
+void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource asteroids[], uint8_t numAsteroids);
 
 void shipUpdatePosition(GravityTarget *ship);
 
 inline int16_t getPowerupCountdown();
 
 void drawBullet(bullet* bullet, uint32_t frameCount, const uint8_t* background);
-void drawAllBullets(bullet bullets[], uint8_t numOfBullets, vector_t* offset, uint32_t frameCount, uint8_t* background);
+void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount, uint8_t* background);
 void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[], uint8_t numOfEnemies, vector_t *playerPos);
 
 void drawAsteroid(GravitySource* asteroid, const uint8_t* background);
