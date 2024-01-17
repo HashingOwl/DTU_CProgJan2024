@@ -11,6 +11,8 @@ deci = 8
 steps = 512
 
 def func(x):
+    if x==256:
+        return 0.999999
     return m.sin(x*m.pi/steps)
     """
     if x == 0:

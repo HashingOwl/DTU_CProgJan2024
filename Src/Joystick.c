@@ -7,16 +7,16 @@
  */
 
 void initJoystickAnalog () {
-	//Initializes PA4 as Joystick-X and PA6 as Joysticj-Y
+	//Initializes PA7 as Joystick-X and PA6 as Joysticj-Y
 	RCC->AHBENR |= RCC_AHBPeriph_GPIOA; // Enable clock for GPIO Port A
 
 	GPIOA->MODER |= (0x00000000 << (6 * 2));
 	GPIOA->PUPDR &= ~(0x00000003 << (6 * 2));
 	GPIOA->PUPDR |= (0x00000002 << (6 * 2));
 
-	GPIOA->MODER |= (0x00000000 << (4 * 2));
-	GPIOA->PUPDR &= ~(0x00000003 << (4 * 2));
-	GPIOA->PUPDR |= (0x00000002 << (4 * 2));
+	GPIOA->MODER |= (0x00000000 << (7 * 2));
+	GPIOA->PUPDR &= ~(0x00000003 << (7 * 2));
+	GPIOA->PUPDR |= (0x00000002 << (7 * 2));
 
 	//Initializes ADC1
 	RCC->CFGR2 &= ~RCC_CFGR2_ADCPRE12; // Clear ADC12 prescaler bits
@@ -56,8 +56,8 @@ uint8_t readJoystickButtons(void) {
 }
 
 uint16_t JoystickXADC() {
-	//Reads ADC value on PA4 (Joy-X)
-	ADC_RegularChannelConfig(ADC1, ADC_Channel_5, 1, ADC_SampleTime_1Cycles5);
+	//Reads ADC value on PA7 (Joy-X)
+	ADC_RegularChannelConfig(ADC1, ADC_Channel_15, 1, ADC_SampleTime_1Cycles5);
 	ADC_StartConversion(ADC1); // Start ADC read
 	while (ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC) == 0);
 	return ADC_GetConversionValue(ADC1);
