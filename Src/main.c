@@ -380,6 +380,7 @@ void initTimer15(uint16_t prescale, uint32_t reloadValue){
 //This interrupt handles BossScreen.
 void EXTI4_IRQHandler(void) {
 	//Pauses everything
+	uint8_t reenableFlag = TIM2->DIER&0x1;
 	TIM2->DIER &= ~(0x0001);
 	TIM15->DIER &= ~(0x0001);
 	TIM16->DIER &= ~(0x0001);
@@ -387,7 +388,9 @@ void EXTI4_IRQHandler(void) {
 	while((GPIOA->IDR)&(1<<4));
 	while(!((GPIOA->IDR)&(1<<4)));
 	//Reenters
-	TIM2->DIER |= 0x0001;
+	if (reenableFlag) {
+		TIM2->DIER |= 0x0001;
+	}
 	TIM15->DIER |= 0x0001;
 	TIM16->DIER |= 0x0001;
 	EXTI_ClearFlag(EXTI_Line4);
