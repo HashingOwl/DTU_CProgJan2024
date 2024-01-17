@@ -24,7 +24,7 @@ typedef struct {
 } GravitySource;
 
 //Aplies linear gravity (F=G*M/r) from all sources to the target
-void applyGravity(GravityTarget *target, GravitySource sources[], uint8_t numOfSoruces);
+void applyGravity(vector_t pos, vector_t* vel, GravitySource objects[], uint8_t numOfObj);
 
 //Returns true if the sqaured distance between vectors p and q are less than squareRadius
 char circleCollision(vector_t *p, vector_t *q, uint32_t squareDistance);

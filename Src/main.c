@@ -70,7 +70,7 @@ int main(void)
 			{.pos = {36 << FIX, 36 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 0x50000000},
 			{.pos = {92 << FIX, 92 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 0x50000000}};
 	uint8_t numBullets = 20;
-	GravityTarget bullets[20] = {};
+	bullet bullets[20] = {};
 
 	//Enemies
 	vector_t enemies[2] = {
@@ -78,7 +78,7 @@ int main(void)
 			{80 << FIX, 80 << FIX},
 	};
 	uint8_t numOfEnemies = 2;
-	int16_t enemyShootResetValue = 20 * 5; // 20 * seconds between shoot
+	int16_t enemyShootResetValue = 20 * 1; // 20 * seconds between shoot
 	int16_t enemyShootCountdown = enemyShootResetValue;
 
 	//Console and graphic
@@ -128,7 +128,7 @@ int main(void)
 				ship.vel.x += input.x;
 				ship.vel.y += input.y;
 
-				applyGravity(&ship, asteroids, numAsteroids);
+				applyGravity(ship.pos, &ship.vel, asteroids, numAsteroids);
 				shipUpdatePosition(&ship);
 
 
@@ -160,11 +160,14 @@ int main(void)
 				}
 
 				// --------------------------BULLETS--------------------------------
-				bulletUpdatePosition(&bullets, numBullets, asteroids, numAsteroids);
-				drawAllBullets(&bullets, numBullets, frameCount, currentBackground);
+				for(uint8_t b = 0; b < numBullets; b++){
+					applyGravity(bullets[b].pos, &bullets[b].vel, asteroids, numAsteroids);
+				}
+				bulletUpdatePosition(bullets, numBullets, asteroids, numAsteroids);
+				drawAllBullets(bullets, numBullets, frameCount, currentBackground);
 
 				if(!enemyShootCountdown){
-					generateBullets(&bullets, numBullets, enemies, numOfEnemies, &ship.pos);
+					generateBullets(bullets, numBullets, enemies, numOfEnemies, &ship.pos);
 					enemyShootCountdown = enemyShootResetValue;
 				}
 
@@ -246,7 +249,8 @@ void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[],
 			bullets[i].pos = enemies[i];
 			bullets[i].isActive = 1;
 			vector_t direction = subtractVectors(playerPos, &enemies[i]);
-			bullets[i].vel = normalizeFIXVector(&direction);
+			direction = normalizeFIXVector(&direction);
+			bullets[i].vel = multFIXVector(&direction, 0x200);
 		}
 	}
 }
