@@ -33,9 +33,6 @@
 //Set true by interrupt when it is time to make a new frame
 volatile uint8_t updateFrame = 0;
 
-//Set to number > 0 corresponding to the number of frames the collision animation and effect takes. Decreased at every frame if > 0.
-int8_t collisionCounter = 0;
-
 // Used for debugging
 long int debug1 = 0;
 long int debug2 = 0;
@@ -58,29 +55,36 @@ int main(void)
 	// Used in sprite animations
 	uint32_t frameCount = 0;
 
-	//PLAYER ShipSHIP
+	//PLAYER Ship
+	vector_t playerStartPos = {100 << FIX, 10<<FIX};
 	GravityTarget ship = {
-			.pos = {10 << FIX, 10<<FIX},
+			.pos = playerStartPos,
 			.vel = {0, 0},
 			.anchor = {6, 4},
 			.radius = 5 << FIX};
+	uint8_t maxLives = 5;
+	uint8_t livesLeft = 5;
+
+	uint8_t shipsThrough = 0;
 
 	// Asteroids creating gravity
 	uint8_t numAsteroids = 7;
 
 	GravitySource asteroids[7] = {
-			{.pos = {U_WIDTH/2, U_HEIGHT/2}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
-			{.pos = {40 << FIX, 50 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
-			{.pos = {40 << FIX, 150 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
-			{.pos = {160 << FIX, 50 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
-			{.pos = {160 << FIX, 150 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
-			{.pos = {100 << FIX, 30 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
-			{.pos = {100 << FIX, 170 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
+			{.pos = {U_WIDTH/2, U_HEIGHT/2}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
+			{.pos = {40 << FIX, 50 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
+			{.pos = {40 << FIX, 150 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
+			{.pos = {160 << FIX, 50 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
+			{.pos = {160 << FIX, 150 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
+			{.pos = {100 << FIX, 30 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
+			{.pos = {100 << FIX, 170 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
 	};
 
 	uint8_t numBullets = 20;
-
 	bullet bullets[20] = {};
+
+	//Set to number > 0 corresponding to the number of frames the collision animation and effect takes. Decreased at every frame if > 0.
+	int8_t collisionCounter = 0;
 
 	//Enemies
 	vector_t enemies[2] = {
@@ -142,18 +146,28 @@ int main(void)
 				ship.vel.x += input.x;
 				ship.vel.y += input.y;
 
-				applyGravity(&ship, asteroids, numAsteroids);
+				applyGravity(ship.pos, &ship.vel, asteroids, numAsteroids);
 				shipUpdatePosition(&ship);
 
 
 				// Player-Bounds collision
 				if(outOfBounds(ship.pos.x, 	ship.radius + BORDER_PAD, U_WIDTH - ship.radius - BORDER_PAD)) {
 					clamp(&(ship.pos.x), 	ship.radius + BORDER_PAD, U_WIDTH - ship.radius - BORDER_PAD);
-					ship.vel.x /= -2;
+					ship.vel.x /= -4;
 				}
-				if(outOfBounds(ship.pos.y, 	ship.radius + BORDER_PAD, U_HEIGHT - ship.radius - BORDER_PAD)) {
-					clamp(&(ship.pos.y), 	ship.radius + BORDER_PAD, U_HEIGHT - ship.radius - BORDER_PAD);
-					ship.vel.y /= -2;
+				//Check if player hits top
+				if(ship.pos.y < ship.radius + BORDER_PAD){
+					ship.pos.y = ship.radius + BORDER_PAD;
+					ship.vel.y /= -4;
+				}
+
+				//WIN CONDITION - Check if player hits bottom.
+				if(ship.pos.y > U_WIDTH - ship.radius - BORDER_PAD){
+					//Todo implement win-condition
+					shipsThrough++;
+					ship.pos = playerStartPos;
+					ship.vel.x = 0;
+					ship.vel.y = 0;
 				}
 
 				// Player-Asteroids collision
@@ -173,8 +187,18 @@ int main(void)
 					}
 				}
 
-				// --------------------------BULLETS--------------------------------
+				// --------------------------BULLETS AND ENEMIES--------------------------------
+				for(uint8_t b = 0; b < numBullets; b++){
+					applyGravity(bullets[b].pos, &bullets[b].vel, asteroids, numAsteroids);
+				}
 				bulletUpdatePosition(bullets, numBullets, asteroids, numAsteroids);
+				if(bulletHitPlayer(&ship.pos, bullets, numBullets)){
+					collisionCounter = 10;
+					livesLeft--;
+					if(livesLeft == 0){
+						//todo implement what happens when no more lives.
+					}
+				}
 				drawAllBullets(bullets, numBullets, frameCount, currentBackground);
 
 				// Clean Bullets
@@ -230,6 +254,8 @@ int main(void)
 	}
 }
 
+//----------------------------------GAME CONTROL----------------------------
+
 void shipUpdatePosition(GravityTarget *ship){
 	ship->pos = addVectors(&(ship->pos), &(ship->vel));
 }
@@ -260,6 +286,20 @@ void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource 
 	}
 }
 
+char bulletHitPlayer(vector_t* playerPos, bullet bullets[], uint8_t numBullets){
+	char hit = 0;
+	for (uint8_t i = 0; i < numBullets; i++)
+	{
+		if(bullets[i].isActive){
+			if(circleCollision(playerPos, &bullets[i].pos, 0x900)){
+				hit = 1;
+				bullets[i].isActive = 0;
+			}
+		}
+	}
+	return hit;
+}
+
 void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount, const uint8_t* background){
 	for(uint8_t i = 0; i < numOfBullets; i++){
 		if(bullets[i].isActive){
@@ -276,7 +316,8 @@ void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[],
 			bullets[i].anchor.x = 2;
 			bullets[i].anchor.y = 2;
 			vector_t direction = subtractVectors(playerPos, &enemies[i]);
-			bullets[i].vel = normalizeFIXVector(&direction);
+			direction = normalizeFIXVector(&direction);
+			bullets[i].vel = multFIXVector(&direction, 0x200);
 		}
 	}
 }
@@ -314,7 +355,7 @@ void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const ui
 	}
 }
 
-void drawSentry() {
+void drawSentry(GravitySource* sentry, const uint8_t* background) {
 
 }
 

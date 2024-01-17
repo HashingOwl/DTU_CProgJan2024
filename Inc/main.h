@@ -27,6 +27,7 @@ void TIM1_BRK_TIM15_IRQHandler(void);
 void initTimer15(uint16_t prescale, uint32_t reloadValue);
 
 void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource asteroids[], uint8_t numAsteroids);
+char bulletHitPlayer(vector_t* playerPos, bullet bullets[], uint8_t numBullets);
 
 void shipUpdatePosition(GravityTarget *ship);
 
