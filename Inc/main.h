@@ -17,6 +17,7 @@ typedef struct {
 
 typedef struct {
 	vector_t pos, vel, anchor;
+	uint32_t radius;
 	char isActive;
 }bullet;
 

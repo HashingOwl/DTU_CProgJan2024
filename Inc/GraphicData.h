@@ -11,8 +11,8 @@
 #include <stdint.h>
 
 // In PuTTY coordinates
-#define WIDTH 128
-#define HEIGHT 64
+#define P_WIDTH 128
+#define P_HEIGHT 64
 /*
  * GraphicData.c
  *

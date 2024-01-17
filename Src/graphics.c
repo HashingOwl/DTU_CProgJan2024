@@ -196,7 +196,7 @@ void drawBackground(const uint8_t* background) {
 	// Background assumed formatted as four characters, 4 x 2 pixels
 	color(BACKGROUND_COLOR, BLACK);
 	gotoxy(0,0);
-	for (uint16_t b = 0; b < WIDTH*HEIGHT/4; b++) {
+	for (uint16_t b = 0; b < P_WIDTH*P_HEIGHT/4; b++) {
 		uint8_t byte = background[b];
 		for (uint8_t i = 0; i < 4; i++) {
 			drawBgChar(byte, i);
@@ -268,7 +268,7 @@ void drawSprite(const uint8_t* background, const uint8_t* spriteData, uint8_t sp
 		// Draw initial top-padded row
 		gotoxy(xPos, yPos/2);
 		for (uint8_t i = 0; i < spriteWidth; i++) {
-			uint8_t bgByte =  getByteAtPos(background, xPos+4*i, yPos-1, WIDTH);
+			uint8_t bgByte =  getByteAtPos(background, xPos+4*i, yPos-1, P_WIDTH);
 			uint8_t spriteByte = getTopPaddedByte(spriteData, i);
 			drawSpriteByte(spriteByte, bgByte, spriteColor);
 		}
@@ -276,7 +276,7 @@ void drawSprite(const uint8_t* background, const uint8_t* spriteData, uint8_t sp
 		for (uint8_t y = 0; y < spriteHeight-1; y++) {
 			gotoxy(xPos, (yPos/2)+y+1);
 			for (uint8_t x = 0; x < spriteWidth; x++) {
-				uint8_t bgByte =  getByteAtPos(background, xPos+4*x, yPos + 2*y + 1, WIDTH);
+				uint8_t bgByte =  getByteAtPos(background, xPos+4*x, yPos + 2*y + 1, P_WIDTH);
 				uint8_t spriteByte = getByteAtPos(spriteData, x*4, y*2 + 1, spriteWidth*4);
 				drawSpriteByte(spriteByte, bgByte, spriteColor);
 			}
@@ -284,7 +284,7 @@ void drawSprite(const uint8_t* background, const uint8_t* spriteData, uint8_t sp
 		// Draw final bottom-padded row
 		gotoxy(xPos, yPos/2 + spriteHeight);
 		for (uint8_t i = 0; i < spriteWidth; i++) {
-			uint8_t bgByte =  getByteAtPos(background, xPos+4*i, yPos + 2*(spriteHeight) - 1, WIDTH);
+			uint8_t bgByte =  getByteAtPos(background, xPos+4*i, yPos + 2*(spriteHeight) - 1, P_WIDTH);
 			uint8_t spriteByte = getBottomPaddedByte(spriteData, (spriteHeight-1)*(spriteWidth) + i);
 			drawSpriteByte(spriteByte, bgByte, spriteColor);
 		}
@@ -293,7 +293,7 @@ void drawSprite(const uint8_t* background, const uint8_t* spriteData, uint8_t sp
 		for (uint8_t y = 0; y < spriteHeight; y++) {
 			gotoxy(xPos, (yPos/2)+y);
 			for (uint8_t x = 0; x < spriteWidth; x++) {
-				uint8_t bgByte =  getByteAtPos(background, xPos+4*x, yPos + 2*y, WIDTH);
+				uint8_t bgByte =  getByteAtPos(background, xPos+4*x, yPos + 2*y, P_WIDTH);
 				uint8_t spriteByte = spriteData[y*(spriteWidth)+x];
 				drawSpriteByte(spriteByte, bgByte, spriteColor);
 			}
@@ -303,7 +303,7 @@ void drawSprite(const uint8_t* background, const uint8_t* spriteData, uint8_t sp
 }
 
 void resetGrid(uint8_t* grid) {
-	memset(grid, 0, WIDTH*HEIGHT/8);
+	memset(grid, 0, P_WIDTH*P_HEIGHT/8);
 }
 
 // TO DO: Optimize for speed
@@ -311,7 +311,7 @@ void resetGrid(uint8_t* grid) {
 void contaminateRect(uint8_t* grid, uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
 	for (uint8_t r = y/2; r < (y+h+1)/2; r++) {
 		for (uint8_t c = x; c < x+w; c++) {
-			grid[r*WIDTH/8 + c/8] |= (0b1 << c%8);
+			grid[r*P_WIDTH/8 + c/8] |= (0b1 << c%8);
 		}
 	}
 }
@@ -321,7 +321,7 @@ void contaminateRect(uint8_t* grid, uint8_t x, uint8_t y, uint8_t w, uint8_t h) 
 void cleanRect(uint8_t* grid, uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
 	for (uint8_t r = y/2; r < (y+h+1)/2; r++) {
 		for (uint8_t c = x; c < x+w; c++) {
-			grid[r*WIDTH/8 + c/8] &= ~(0b1 << c%8);
+			grid[r*P_WIDTH/8 + c/8] &= ~(0b1 << c%8);
 		}
 	}
 }
@@ -331,14 +331,14 @@ void drawCleanBackground(const uint8_t* background, uint8_t* cleanGrid) {
 	// x and y in PuTTY coords
 	uint8_t cleanByte;
 	uint8_t skipping = 0;
-	for (uint8_t row = 0; row < HEIGHT; row++) {
-		for (uint8_t x = 0; x < WIDTH; x+=8) { // We asume (WIDTH % 8 == 0)
-			cleanByte = cleanGrid[(row*WIDTH+x)/8];
+	for (uint8_t row = 0; row < P_HEIGHT; row++) {
+		for (uint8_t x = 0; x < P_WIDTH; x+=8) { // We asume (P_WIDTH % 8 == 0)
+			cleanByte = cleanGrid[(row*P_WIDTH+x)/8];
 			if (cleanByte == 0) { // Most often
 				skipping = 1;
 				continue;
 			}
-			uint16_t bg = background[row*WIDTH/4 + x/4] | (background[row*WIDTH/4+ x/4 +1] << 8);
+			uint16_t bg = background[row*P_WIDTH/4 + x/4] | (background[row*P_WIDTH/4+ x/4 +1] << 8);
 			for (uint8_t i = 0; i < 8; i++) {
 				if ((cleanByte >> i) & 0b1) {
 					if (skipping) {

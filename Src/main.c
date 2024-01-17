@@ -18,8 +18,8 @@
 
 // Fixed point constants
 #define BORDER_PAD 	(2 << FIX)
-#define U_WIDTH 	(WIDTH << FIX)
-#define U_HEIGHT 	(HEIGHT * 2 << FIX)
+#define U_WIDTH 	(P_WIDTH << FIX)
+#define U_HEIGHT 	(P_HEIGHT * 2 << FIX)
 
 #define FIX_2_X(a) ((a->pos.x >> FIX) - a->anchor.x)
 #define FIX_2_Y(a) ((a->pos.y >> FIX) - a->anchor.y)
@@ -70,7 +70,8 @@ int main(void)
 			{.pos = {36 << FIX, 36 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 0x50000000},
 			{.pos = {92 << FIX, 92 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 0x50000000}};
 	uint8_t numBullets = 20;
-	GravityTarget bullets[20] = {};
+
+	bullet bullets[20] = {};
 
 	//Enemies
 	vector_t enemies[2] = {
@@ -83,7 +84,7 @@ int main(void)
 
 	//Console and graphic
 	//int32_t gameSize = consoleSize << FIX;
-	uint8_t backgroundContamination[WIDTH * HEIGHT / 8] = {};
+	uint8_t backgroundContamination[P_WIDTH * P_HEIGHT / 8] = {};
 	// Not actually a constant, it can be changed in software. It's a pointer to a constant.
 	uint8_t* currentBackground = BG_Stratosphere_1;
 
@@ -160,11 +161,11 @@ int main(void)
 				}
 
 				// --------------------------BULLETS--------------------------------
-				bulletUpdatePosition(&bullets, numBullets, asteroids, numAsteroids);
-				drawAllBullets(&bullets, numBullets, frameCount, currentBackground);
+				bulletUpdatePosition(bullets, numBullets, asteroids, numAsteroids);
+				drawAllBullets(bullets, numBullets, frameCount, currentBackground);
 
 				if(!enemyShootCountdown){
-					generateBullets(&bullets, numBullets, enemies, numOfEnemies, &ship.pos);
+					generateBullets(bullets, numBullets, enemies, numOfEnemies, &ship.pos);
 					enemyShootCountdown = enemyShootResetValue;
 				}
 
@@ -190,8 +191,14 @@ int main(void)
 				gotoxy(0,1); printf("%4ld", debug2);
 
 				//------------Contaminate-for-next-frame--------------------
-				contaminateRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
 				// Player
+				contaminateRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
+				// Bullet
+				for (int i = 0; i < numBullets; i++) {
+					if (bullets[i].isActive) {
+						contaminateRect(backgroundContamination, (bullets[i].pos.x >> FIX) - bullets[i].anchor.x, (bullets[i].pos.y >> FIX) - bullets[i].anchor.y, 4, 4);
+					}
+				}
 
 				break;
 //=========================================PAUSED======================================================
@@ -223,10 +230,10 @@ void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource 
 			}
 
 			//Out of bounds
-			if(outOfBounds(bullets[i].pos.x, 1 << FIX, 123 << FIX)) {
+			if ( outOfBounds(bullets[i].pos.x, BORDER_PAD, U_WIDTH - BORDER_PAD) ) {
 				bullets[i].isActive = 0;
 			}
-			else if(outOfBounds(bullets[i].pos.y, 1 << FIX, 123 << FIX)) {
+			else if ( outOfBounds(bullets[i].pos.y, BORDER_PAD, U_HEIGHT - BORDER_PAD) ) {
 				bullets[i].isActive = 0;
 			}
 		}
@@ -243,8 +250,11 @@ void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount,
 void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[], uint8_t numOfEnemies, vector_t *playerPos){
 	for(uint8_t i = 0; i < numOfEnemies; i++){
 		if(!bullets[i].isActive){
-			bullets[i].pos = enemies[i];
 			bullets[i].isActive = 1;
+			bullets[i].pos = enemies[i];
+			bullets[i].radius = 2;
+			bullets[i].anchor.x = 2;
+			bullets[i].anchor.y = 2;
 			vector_t direction = subtractVectors(playerPos, &enemies[i]);
 			bullets[i].vel = normalizeFIXVector(&direction);
 		}
