@@ -15,7 +15,7 @@
 // Game states
 #define MENU 1
 #define PLAYING 2
-#define PAUSED 3
+#define HELP 3
 
 // Fixed point constants
 #define BORDER_PAD 	(2 << FIX)
@@ -42,10 +42,10 @@ int main(void)
 {
 	// Init modules
 	uart_init(1000000);
-	//initBossScreen();
+	initBossScreen();
 	initJoystickAnalog();
 	soundInit();
-	disableMusic();
+	changeMusic(0);
 	initTimer15(19, 3600000);
 
 	initLED();
@@ -54,7 +54,7 @@ int main(void)
 	setupJoystickPins();
 
 	int gameState;
-	gameState = PLAYING;
+	gameState = MENU;
 	// Used in sprite animations
 	uint32_t frameCount = 0;
 
@@ -115,7 +115,7 @@ int main(void)
 	uint8_t backgroundContamination[P_WIDTH * P_HEIGHT / 8] = {};
 	resetGrid(backgroundContamination);
 	// Not actually a constant, it can be changed in software. It's a pointer to a constant.
-	const uint8_t* currentBackground = BG_Stratosphere_2;
+	const uint8_t* currentBackground = MainMenuBG;
 
 	// INITIALISATION DRAWING: Should be made whenever we set the gamemode to PLAYING
 	drawBackground(currentBackground);
@@ -123,15 +123,22 @@ int main(void)
 
 	gotoxy(0, 0);
 
+	/*
 	// Asteroids
 	for (int i = 0; i < numAsteroids; i++) {
 		drawAsteroid(&asteroids[i], currentBackground);
 		// Delay - without this it doesn't work for mysterious reasons.
 		for (uint32_t i = 0; i < 360000; i++);
-	}
+	}*/
 
 	gotoxy(0,0);
+
 	printf("%4ld", debug1);
+
+	uint8_t joyVal = readJoy();
+	uint8_t joyValPrev = joyVal;
+	int8_t currSelectionMainMenu = 0;
+	uint8_t buttonLift = 1;
 
 	while(1){
 		if(updateFrame){
@@ -141,9 +148,61 @@ int main(void)
 			switch (gameState) {
 //==========================================MENU========================================================
 			case MENU:
+				currentBackground = MainMenuBG;
+				joyVal = readJoystickDigital();
+				printf("%d",readJoystickButtons());
+				if (joyVal != joyValPrev) {
+					for(uint8_t i = 0;i < 2; i++){
+						contaminateRect(backgroundContamination,46+i*95,90+currSelectionMainMenu*38,12,12);
+					}
+
+					if (joyVal & 0b1) {
+						currSelectionMainMenu--;
+					}
+					else if ( (joyVal & 0b10) && joyVal != 0) {
+						currSelectionMainMenu++;
+					}
+
+				}
+				if (currSelectionMainMenu >2) {
+					currSelectionMainMenu = 0;
+				}
+				else if(currSelectionMainMenu < 0) {
+					currSelectionMainMenu = 2;
+				}
+				joyValPrev = joyVal;
+
+				drawCleanBackground(currentBackground, backgroundContamination);
+				resetGrid(backgroundContamination);
+
+				for(uint8_t i = 0;i < 2; i++){
+					drawSprite(currentBackground, Alien1_Anim[0], 3, 4, WHITE, 46+i*95,90+currSelectionMainMenu*38);
+				}
+				if (readJoystickButtons() && buttonLift) {
+					buttonLift = 0;
+					switch(currSelectionMainMenu) {
+						//Goto game
+						case 0:
+							gameState = PLAYING;
+							break;
+						//Goto help screen
+						case 1:
+							drawBackground(BG_Stratosphere_2); //TODO tilføj den rigtige skærm for help
+							gameState = HELP;
+							break;
+						//Dis/en-able sound
+						case 2:
+							changeMusic(0);
+							break;
+
+					}
+				}
+				else if (readJoystickButtons() == 0){
+					buttonLift = 1;
+				}
 				break;
 //=========================================PLAYING======================================================
-			case PLAYING:;
+			case PLAYING:
 				enemyShootCountdown--;
 				powerupCountdown--;
 				if(playerHit > 0)
@@ -154,7 +213,7 @@ int main(void)
 				vector_t input = {0, 0};
 				//readJoystickAnalog(&input.x, &input.y);
 				// Temporary when testing from a board without proper joystick. Please outcomment it instead of deleting.
-				uint8_t joyVal = readJoy();
+				joyVal = readJoy();
 				input.y -= ((joyVal & 1) != 0) * 20;
 				input.y += ((joyVal & 2) != 0) * 20;
 				input.x -= ((joyVal & 4) != 0) * 20;
@@ -287,10 +346,17 @@ int main(void)
 				}
 
 				break;
-//=========================================PAUSED======================================================
-			case PAUSED:
+//=========================================HELP======================================================
+			case HELP:
 				// Check for input, showing either boss_bakcground, or changing state to MENU or PLAYING
-				break;
+				if (readJoystickButtons() && buttonLift) {
+					buttonLift = 0;
+					drawBackground(MainMenuBG); //TODO tilføj den rigtige skærm
+					gameState = MENU;
+				}
+				else if (readJoystickButtons() == 0){
+					buttonLift = 1;
+				};
 			}
 		}
 	}
@@ -453,22 +519,18 @@ void initTimer15(uint16_t prescale, uint32_t reloadValue){
 	NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn); // Enable interrupt
 }
 
-//This interrupt handles BossScreen.
+//This interrupt handles BossScreen. Fix baggrund på return.
 void EXTI4_IRQHandler(void) {
 	//Pauses everything
-	uint8_t reenableFlag = TIM2->DIER&0x1;
-	TIM2->DIER &= ~(0x0001);
 	TIM15->DIER &= ~(0x0001);
-	TIM16->DIER &= ~(0x0001);
+	changeMusic(1);
 	drawBackground(bossScreenBG);
 	while((GPIOA->IDR)&(1<<4));
 	while(!((GPIOA->IDR)&(1<<4)));
-	//Reenters
-	if (reenableFlag) {
-		TIM2->DIER |= 0x0001;
-	}
+	for (uint32_t i = 0; i<1000000;i++);
+	//Reenters prev state
 	TIM15->DIER |= 0x0001;
-	TIM16->DIER |= 0x0001;
+	changeMusic(0);
 	EXTI_ClearFlag(EXTI_Line4);
 	EXTI_ClearITPendingBit(EXTI_Line4);
 }
@@ -479,7 +541,7 @@ void initBossScreen(void) {
 	GPIOA->PUPDR &= ~(0x00000002 << (4 * 2));
 	GPIOA->PUPDR |= (0x00000002 << (4 * 2));
 	RCC->APB2ENR |= (1<<0);
-	//SYSCFG->EXTICR[1] = 1;
+	SYSCFG->EXTICR[1] = 0;
 
 	EXTI->IMR 		|= (1 << 4);
 	//EXTI->EMR  		|= (1 << 4);

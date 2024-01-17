@@ -78,20 +78,20 @@ uint8_t readJoystickDigital() {
 	adcVal = JoystickXADC();
 
 	//Checks result and converts it to standard joystick format
-	if (adcVal <= 500) {
+	if (adcVal <= 1050) {
 		res |= 0x04;
 	}
-	else if (adcVal >= 2000) {
+	else if (adcVal >= 3000) {
 		res |= 0x08;
 	}
 
 
 	adcVal = JoystickYADC();
 	//Checks result and converts it to standard joystick format
-	if (adcVal <= 500) {
+	if (adcVal <= 1800) {
 		res |= 0x01;
 	}
-	else if (adcVal >= 2000) {
+	else if (adcVal >= 3000) {
 		res |= 0x02;
 	}
 
