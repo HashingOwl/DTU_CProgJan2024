@@ -162,5 +162,5 @@ int32_t sine(int16_t n) {
 }
 
 int32_t cosi(int16_t n) {
-	return sine(n+128);
+	return sine(n+256);
 }
