@@ -44,6 +44,10 @@ int main(void)
 {
 	// Init modules
 	uart_init(1000000);
+	for (uint16_t i=0;i<512;i++) {
+		printf("i:03%d SIN:%x\n",i,sine(i));
+	}
+ 	while(1) {}
 	initJoystickAnalog();
 	soundInit();
 	disableMusic();
