@@ -64,5 +64,6 @@ extern const uint8_t* Sentry_Anim[4];
 extern const uint8_t BG_Stratosphere_1[128*64/4];
 extern const uint8_t TestBG[128*64/4];
 extern const uint8_t BG_Stratosphere_2[200*200/8];
+extern const uint8_t bossScreenBG[200*200/8];
 
 #endif /* GRAPHICDATA_H_ */

@@ -40,4 +40,5 @@ void drawAsteroid(GravitySource* asteroid, const uint8_t* background);
 
 void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const uint8_t* background);
 
+void initBossScreen(void);
 #endif /* MAIN_H_ */

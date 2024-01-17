@@ -44,7 +44,7 @@ int main(void)
 {
 	// Init modules
 	uart_init(1000000);
-
+	//initBossScreen();
 	initJoystickAnalog();
 	soundInit();
 	disableMusic();
@@ -335,3 +335,39 @@ void initTimer15(uint16_t prescale, uint32_t reloadValue){
 	NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, 10); // Set interrupt priority
 	NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn); // Enable interrupt
 }
+
+//This interrupt handles BossScreen.
+void EXTI4_IRQHandler(void) {
+	//Pauses everything
+	TIM2->DIER &= ~(0x0001);
+	TIM15->DIER &= ~(0x0001);
+	TIM16->DIER &= ~(0x0001);
+	drawBackground(bossScreenBG);
+	while((GPIOA->IDR)&(1<<4));
+	while(!((GPIOA->IDR)&(1<<4)));
+	//Reenters
+	TIM2->DIER |= 0x0001;
+	TIM15->DIER |= 0x0001;
+	TIM16->DIER |= 0x0001;
+	EXTI_ClearFlag(EXTI_Line4);
+	EXTI_ClearITPendingBit(EXTI_Line4);
+}
+
+void initBossScreen(void) {
+	RCC->AHBENR |= RCC_AHBPeriph_GPIOA;
+	GPIOA->MODER &= ~(0x00000003 << (4 * 2));
+	GPIOA->PUPDR &= ~(0x00000002 << (4 * 2));
+	GPIOA->PUPDR |= (0x00000002 << (4 * 2));
+	RCC->APB2ENR |= (1<<0);
+	//SYSCFG->EXTICR[1] = 1;
+
+	EXTI->IMR 		|= (1 << 4);
+	//EXTI->EMR  		|= (1 << 4);
+	EXTI->RTSR      |= (1 << 4);
+
+	NVIC_SetPriority(EXTI4_IRQn, 1);
+	NVIC_EnableIRQ(EXTI4_IRQn);
+
+}
+
+
