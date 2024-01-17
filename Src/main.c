@@ -42,7 +42,7 @@ int main(void)
 {
 	// Init modules
 	uart_init(1000000);
-	initBossScreen();
+	//initBossScreen();
 	initJoystickAnalog();
 	soundInit();
 	disableMusic();
@@ -187,6 +187,8 @@ int main(void)
 					livesLeft = maxLives;
 					setLEDToIndicateHealth(livesLeft);
 
+					//TODO ALBERT print new score
+
 					makeNewAlien(&ship, &playerStartPos, &currentAlien);
 				}
 
@@ -221,7 +223,7 @@ int main(void)
 
 						makeNewAlien(&ship, &playerStartPos, &currentAlien);
 						if(aliensDead == maxAliensDead){
-							//TODO GAMEOVER
+							gameState = MENU;
 						}
 					}
 					setLEDToIndicateHealth(livesLeft);
@@ -244,8 +246,10 @@ int main(void)
 				//Generating powerups
 				if(powerupCountdown == 0){
 					powerupCountdown = powerupResetValue;
-					if(!RNGSeedSet)
-						RNGSeedSet = (ship.pos.x & 0x000000FF) * (ship.pos.y & 0x000000FF); //Semi random way to initialize RNG
+					if(!RNGSeedSet){
+						RNGSeedSet = 1;
+						setRNGSeed((ship.pos.x & 0x000000FF) * (ship.pos.y & 0x000000FF)); //Semi random way to initialize RNG
+					}
 					generateNewPowerup(powerups, numPowerups);
 					powerupCountdown = getPowerupCountdown();
 				}
@@ -254,8 +258,9 @@ int main(void)
 				for(uint8_t p = 0; p < numPowerups; p++){
 					if(circleCollision(&powerups[p].pos, &ship.pos, 0xF00)){
 						powerups[p].isActive = 0;
-						//todo remove powerup;
-						//todo apply powerup effect;
+						//todo ROALD remove powerup;
+						//todo ROALD apply powerup effect;
+							//If necessary also make check for end of powerup
 					}
 				}
 
@@ -380,9 +385,11 @@ void generateNewPowerup(powerup powerups[], uint8_t numPowerups){
 			powerups[i].pos.x = FIXMUL(rand16bit(), 0x170) + 0x600; //These are magic numbers to ensure the powerups are generated within bounds
 			powerups[i].pos.y = FIXMUL(rand16bit(), 0x170) + 0x600;
 			powerups[i].isActive = 1;
+
 			//TODO VALDEMAR print powerup
 			gotoxy(powerups[i].pos.x >> FIX, powerups[i].pos.y >> (FIX + 1));
 			fgcolor(RED);
+			bgcolor(WHITE);
 			printf("X");
 			break;
 		}
