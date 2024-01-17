@@ -11,8 +11,8 @@
 #include <stdint.h>
 
 // In PuTTY coordinates
-#define P_WIDTH 128
-#define P_HEIGHT 64
+#define P_WIDTH 200
+#define P_HEIGHT 100
 /*
  * GraphicData.c
  *
@@ -39,7 +39,7 @@ extern const uint8_t Sentry_3[5*4];
 
 //------Alien1------
 extern const uint8_t Alien1_1[3*6];
-extern const uint8_t Alien1_2[2*6];
+extern const uint8_t Alien1_2[3*6];
 extern const uint8_t Alien1_Dead[3*6];
 
 //------Alien2------
@@ -63,5 +63,6 @@ extern const uint8_t* Sentry_Anim[4];
 //========================================BACKGROUNDS============================================
 extern const uint8_t BG_Stratosphere_1[128*64/4];
 extern const uint8_t TestBG[128*64/4];
+extern const uint8_t BG_Stratosphere_2[200*200/8];
 
 #endif /* GRAPHICDATA_H_ */

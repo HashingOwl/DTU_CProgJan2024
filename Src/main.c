@@ -43,7 +43,7 @@ long int debug2 = 0;
 int main(void)
 {
 	// Init modules
-	uart_init(2000000);
+	uart_init(1000000);
 	initJoystickAnalog();
 	soundInit();
 	disableMusic();
@@ -59,24 +59,32 @@ int main(void)
 
 	//PLAYER ShipSHIP
 	GravityTarget ship = {
-			.pos = {64 << FIX, 64<<FIX},
+			.pos = {10 << FIX, 10<<FIX},
 			.vel = {0, 0},
 			.anchor = {6, 4},
 			.radius = 5 << FIX};
 
 	// Asteroids creating gravity
-	uint8_t numAsteroids = 2;
-	GravitySource asteroids[2] = {
-			{.pos = {36 << FIX, 36 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 0x50000000},
-			{.pos = {92 << FIX, 92 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 0x50000000}};
+	uint8_t numAsteroids = 7;
+
+	GravitySource asteroids[7] = {
+			{.pos = {U_WIDTH/2, U_HEIGHT/2}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
+			{.pos = {40 << FIX, 50 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
+			{.pos = {40 << FIX, 150 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
+			{.pos = {160 << FIX, 50 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
+			{.pos = {160 << FIX, 150 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
+			{.pos = {100 << FIX, 30 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
+			{.pos = {100 << FIX, 170 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 12},
+	};
+
 	uint8_t numBullets = 20;
 
 	bullet bullets[20] = {};
 
 	//Enemies
 	vector_t enemies[2] = {
-			{20 << FIX, 20 << FIX},
-			{80 << FIX, 80 << FIX},
+			{70 << FIX, 100 << FIX},
+			{130 << FIX, 100 << FIX},
 	};
 	uint8_t numOfEnemies = 2;
 	int16_t enemyShootResetValue = 20 * 5; // 20 * seconds between shoot
@@ -85,20 +93,24 @@ int main(void)
 	//Console and graphic
 	//int32_t gameSize = consoleSize << FIX;
 	uint8_t backgroundContamination[P_WIDTH * P_HEIGHT / 8] = {};
+	resetGrid(backgroundContamination);
 	// Not actually a constant, it can be changed in software. It's a pointer to a constant.
-	uint8_t* currentBackground = BG_Stratosphere_1;
+	const uint8_t* currentBackground = BG_Stratosphere_2;
 
-	// INITIALISATION DRAWING: Shoudl be made whenever we set the gamemode to PLAYING
+	// INITIALISATION DRAWING: Should be made whenever we set the gamemode to PLAYING
 	drawBackground(currentBackground);
+
+	gotoxy(0, 0);
+
 	// Asteroids
 	for (int i = 0; i < numAsteroids; i++) {
 		drawAsteroid(&asteroids[i], currentBackground);
+		// Delay - without this it doesn't work for mysterious reasons.
+		for (uint32_t i = 0; i < 360000; i++);
 	}
 
-	vector_t debugVec = {2 << FIX, 4 << FIX};
-	debugVec = normalizeFIXVector(&debugVec);
-	debug1 = debugVec.x;
-	debug2 = debugVec.y;
+	gotoxy(0,0);
+	printf("%4ld", debug1);
 
 	while(1){
 		if(updateFrame){
@@ -247,7 +259,7 @@ void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource 
 	}
 }
 
-void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount, uint8_t* background){
+void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount, const uint8_t* background){
 	for(uint8_t i = 0; i < numOfBullets; i++){
 		if(bullets[i].isActive){
 			drawBullet(&bullets[i], frameCount, background);
@@ -259,7 +271,7 @@ void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[],
 		if(!bullets[i].isActive){
 			bullets[i].isActive = 1;
 			bullets[i].pos = enemies[i];
-			bullets[i].radius = 2;
+			bullets[i].radius = 2 << FIX;
 			bullets[i].anchor.x = 2;
 			bullets[i].anchor.y = 2;
 			vector_t direction = subtractVectors(playerPos, &enemies[i]);
@@ -319,6 +331,6 @@ void initTimer15(uint16_t prescale, uint32_t reloadValue){
 	TIM15->PSC = prescale;
 
 	TIM15->DIER |= 0x0001; // Enable timer 15 interrupts
-	NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, 1); // Set interrupt priority
+	NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, 10); // Set interrupt priority
 	NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn); // Enable interrupt
 }

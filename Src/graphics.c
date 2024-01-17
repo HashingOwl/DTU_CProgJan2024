@@ -7,38 +7,11 @@
 
 #include "graphics.h"
 
-/*
-#include "stm32f30x_conf.h" // STM32 config
-#include "30010_io.h" 		// Input/output library for this course
-#include <stdio.h>
-#include "timer.h"
-#include "GraphicData.h"
-#include "joystick.h"
-#include <string.h>
-*/
-
-#define ESC 0x1B
-
-#define PIX_NONE 32
-#define PIX_TOP 223
-#define PIX_BOT 220
-#define PIX_FULL 219
-
-#define BLACK 0
-#define RED 1
-#define GREEN 2
-#define BLUE 4
-#define PURPLE 5
-#define GRAY 7
-#define YELLOW 11
-#define WHITE 15
-
-#define BACKGROUND_COLOR GRAY
-
 // Experimental, should be faster
 void print_byte(uint8_t byte) {
-	while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
     USART_SendData(USART2, byte);
+	while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
+
 }
 
 void print_bytes(uint8_t* bytes, uint8_t numBytes) {
@@ -137,7 +110,7 @@ uint8_t getBottomPaddedByte(const uint8_t* imageData, uint8_t byteIndex) {
 
 // TO DO: Is &3 faster than %4 ? This should be investigated for entire document.
 // xPos, yPos and width in pixels
-uint8_t getByteAtPos(const uint8_t* imageData, uint8_t xPos, uint8_t yPos, uint8_t width) {
+uint8_t getByteAtPos(const uint8_t* imageData, int xPos, int yPos, int width) {
 	uint8_t dx = xPos % 4;
 	uint8_t dy = yPos % 2;
 	xPos -= dx;
@@ -196,7 +169,7 @@ void drawBackground(const uint8_t* background) {
 	// Background assumed formatted as four characters, 4 x 2 pixels
 	color(BACKGROUND_COLOR, BLACK);
 	gotoxy(0,0);
-	for (uint16_t b = 0; b < P_WIDTH*P_HEIGHT/4; b++) {
+	for (int b = 0; b < P_WIDTH*P_HEIGHT/4; b++) {
 		uint8_t byte = background[b];
 		for (uint8_t i = 0; i < 4; i++) {
 			drawBgChar(byte, i);
@@ -205,7 +178,7 @@ void drawBackground(const uint8_t* background) {
 }
 
 // TO DO: Reconsider name...
-// Global variable (!!!) Why? Speed is key, passing it around would be time consuming (Yes, really.)
+// Global variable (!!!) Why? Speed is key, passing it around would be time consuming
 uint8_t colorMode = 0; // 0: Background, Black. 1: Sprite, Black. 2: Sprite, Background
 
 // TO DO: Optimize color() UART
@@ -259,10 +232,11 @@ void drawSpriteByte(uint8_t spriteByte, uint8_t bgByte, uint8_t spriteColor) {
 
 // Draws a sprite at a given location
 // Upper left corner is (0,0). Position is in pixels, NOT PuTTY coords.
-void drawSprite(const uint8_t* background, const uint8_t* spriteData, uint8_t spriteWidth, uint8_t spriteHeight, uint8_t spriteColor, uint8_t xPos, uint8_t yPos) {
+void drawSprite(const uint8_t* background, const uint8_t* spriteData, int spriteWidth, int spriteHeight, uint8_t spriteColor, int xPos, int yPos) {
 	// Prepare colorMode
 	colorMode = 0;
 	color(BACKGROUND_COLOR, BLACK);
+	// Variable for distinguishing line or half line placement
 	uint8_t yDelt = (yPos % 2); // 0 or 1
 	if (yDelt == 1) { 	// When drawing on uneven pixel row, on a half PuTTY row
 		// Draw initial top-padded row
@@ -290,9 +264,9 @@ void drawSprite(const uint8_t* background, const uint8_t* spriteData, uint8_t sp
 		}
 	} else { 	// When drawing "normally"
 		// x and y is for bytes, so 4 and 2 respectively
-		for (uint8_t y = 0; y < spriteHeight; y++) {
+		for (int y = 0; y < spriteHeight; y++) {
 			gotoxy(xPos, (yPos/2)+y);
-			for (uint8_t x = 0; x < spriteWidth; x++) {
+			for (int x = 0; x < spriteWidth; x++) {
 				uint8_t bgByte =  getByteAtPos(background, xPos+4*x, yPos + 2*y, P_WIDTH);
 				uint8_t spriteByte = spriteData[y*(spriteWidth)+x];
 				drawSpriteByte(spriteByte, bgByte, spriteColor);
@@ -303,14 +277,14 @@ void drawSprite(const uint8_t* background, const uint8_t* spriteData, uint8_t sp
 }
 
 void resetGrid(uint8_t* grid) {
-	memset(grid, 0, P_WIDTH*P_HEIGHT/8);
+	memset(grid, 0, P_WIDTH * P_HEIGHT / 8);
 }
 
 // TO DO: Optimize for speed
 // All in pixel coordinates
-void contaminateRect(uint8_t* grid, uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
-	for (uint8_t r = y/2; r < (y+h+1)/2; r++) {
-		for (uint8_t c = x; c < x+w; c++) {
+void contaminateRect(uint8_t* grid, int x, int y, int w, int h) {
+	for (int r = y/2; r < (y+h+1)/2; r++) {
+		for (int c = x; c < x+w; c++) {
 			grid[r*P_WIDTH/8 + c/8] |= (0b1 << c%8);
 		}
 	}
@@ -318,9 +292,9 @@ void contaminateRect(uint8_t* grid, uint8_t x, uint8_t y, uint8_t w, uint8_t h) 
 
 // TO DO: Optimize for speed
 // All in pixel coordinates
-void cleanRect(uint8_t* grid, uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
-	for (uint8_t r = y/2; r < (y+h+1)/2; r++) {
-		for (uint8_t c = x; c < x+w; c++) {
+void cleanRect(uint8_t* grid, int x, int y, int w, int h) {
+	for (int r = y/2; r < (y+h+1)/2; r++) {
+		for (int c = x; c < x+w; c++) {
 			grid[r*P_WIDTH/8 + c/8] &= ~(0b1 << c%8);
 		}
 	}
@@ -331,15 +305,15 @@ void drawCleanBackground(const uint8_t* background, uint8_t* cleanGrid) {
 	// x and y in PuTTY coords
 	uint8_t cleanByte;
 	uint8_t skipping = 0;
-	for (uint8_t row = 0; row < P_HEIGHT; row++) {
-		for (uint8_t x = 0; x < P_WIDTH; x+=8) { // We asume (P_WIDTH % 8 == 0)
+	for (int row = 0; row < P_HEIGHT; row++) {
+		for (int x = 0; x < P_WIDTH; x+=8) { // We asume (P_WIDTH % 8 == 0)
 			cleanByte = cleanGrid[(row*P_WIDTH+x)/8];
 			if (cleanByte == 0) { // Most often
 				skipping = 1;
 				continue;
 			}
 			uint16_t bg = background[row*P_WIDTH/4 + x/4] | (background[row*P_WIDTH/4+ x/4 +1] << 8);
-			for (uint8_t i = 0; i < 8; i++) {
+			for (int i = 0; i < 8; i++) {
 				if ((cleanByte >> i) & 0b1) {
 					if (skipping) {
 						gotoxy(x+i, row);
