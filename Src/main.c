@@ -230,7 +230,7 @@ void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource 
 
 			//Asteroid collision
 			for(uint8_t a = 0; a < numAsteroids; a++){
-				if(circleCollision(&bullets[i].pos, &asteroids[a].pos, (asteroids[a].radius * asteroids[a].radius >> FIX))){
+				if(circleCollision(&bullets[i].pos, &asteroids[a].pos, FIXSQUARE(asteroids[a].radius + bullets[i].radius))){
 					bullets[i].isActive = 0;
 					break;
 				}
