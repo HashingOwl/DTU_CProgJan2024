@@ -55,17 +55,19 @@ int main(void)
 	uint32_t gameState = PLAYING;
 	uint32_t frameCount = 0; // Used in sprite animations
 
+	//ALIENS LEFT THROUGHOUT GAME
 	uint8_t aliensLeftStart = 3; //Max number of aliens to die before game over
 	uint8_t aliensLeft = aliensLeftStart;
 	uint8_t aliensThrough = 0; //score
 
 	//----------PLAYER ALIEN---------
-	vector_t playerStartPos = {100 << FIX, 10<<FIX};
+	vector_t playerStartPos = {10 << FIX, 10<<FIX};
 	GravityTarget ship = {
 			.pos = playerStartPos,
 			.vel = {0, 0},
 			.anchor = {6, 4},
 			.radius = 5 << FIX};
+	//ALIEN HEALTH PR. INDIVIDUAL ALINE
 	uint8_t playerHit = 0;
 	uint8_t maxLives = 2;
 	uint8_t livesLeft = maxLives;
@@ -99,13 +101,13 @@ int main(void)
 	//----------BULLETS--------------
 	uint8_t numBullets = 20;
 	bullet bullets[20] = {};
-	uint16_t bulletSpeed = 0x180;
+	uint16_t bulletSpeed = 0x300;
 	uint16_t bulletSpeedIncrease = 0x50;
+	uint32_t bulletRespawnRate = 0x100;
 
 	//----------POWERUPS--------------
 	char RNGSeedSet = 0;
-	uint16_t powerupResetValue = 20*10;
-	uint16_t powerupCountdown = 100;
+	uint16_t powerupCountdown = getPowerupCountdown();
 	powerup powerups[4] = {};
 	uint8_t numPowerups = 4;
 	uint8_t powerupEffects[4] = {};
@@ -122,7 +124,7 @@ int main(void)
 
 	//----------INITIALISATION OF HARD- AND SOFTWARE----------
 	// Output
-	uart_init(1000000);
+	uart_init(256000);
 	initLED();
 	setLED(BLUE);
 	lcd_init();
@@ -137,7 +139,7 @@ int main(void)
 	//Music
 	soundInit();
 	changeMusic(0);
-	initTimer15(19, 3600000);
+	initTimer15(639, 10000);
 
 	//Miscenlaneous
 	//initBossScreen();
@@ -227,9 +229,6 @@ int main(void)
 				break;
 //=========================================PLAYING======================================================
 			case PLAYING:
-				enemyShootCountdown--;
-				powerupCountdown--;
-
 				//If button to enter main menu is hit go to main menu
 				if (readJoystickButtons() & 0) {
 					currentBackground=MainMenuBG;
@@ -245,10 +244,10 @@ int main(void)
 				//readJoystickAnalog(&input.x, &input.y);
 				// Temporary when testing from a board without proper joystick. Please outcomment it instead of deleting.
 				joyVal = readDigitalJoystick();
-				input.y -= ((joyVal & 1) != 0) * 20;
-				input.y += ((joyVal & 2) != 0) * 20;
-				input.x -= ((joyVal & 4) != 0) * 20;
-				input.x += ((joyVal & 8) != 0) * 20;
+				input.y -= ((joyVal & 1) != 0) * 160;
+				input.y += ((joyVal & 2) != 0) * 160;
+				input.x -= ((joyVal & 4) != 0) * 160;
+				input.x += ((joyVal & 8) != 0) * 160;
 
 				//------------------PLAYER PHYSICS---------------------------------
 				//Update velocity based on input and Powerup
@@ -277,15 +276,20 @@ int main(void)
 
 				//WIN CONDITION - Check if player hits bottom.
 				if(ship.pos.y > U_WIDTH - ship.radius - BORDER_PAD){
-					aliensThrough++;
-					bulletSpeed += bulletSpeedIncrease;
-					livesLeft = maxLives;
-					setLEDToIndicateHealth(livesLeft);
+					if(ship.pos.x > U_WIDTH - ship.radius - 0x2000){ //Win condition
+						bulletSpeed += bulletSpeedIncrease;
+						bulletRespawnRate = FIXMUL(bulletRespawnRate, 0xA0);
+						livesLeft = maxLives;
+						setLEDToIndicateHealth(livesLeft);
 
-					//TODO ALBERT print new score
-					drawScore(bufferLCD, aliensThrough,0);
-					drawLCD(bufferLCD);
-					makeNewAlien(&ship, &playerStartPos, &currentAlien);
+						aliensThrough++;
+						drawScore(bufferLCD, aliensThrough, 0);
+						drawLCD(bufferLCD);
+						makeNewAlien(&ship, &playerStartPos, &currentAlien);
+					}else{
+						ship.pos.y = U_WIDTH - ship.radius - BORDER_PAD;
+						ship.vel.y /= -4;
+					}
 				}
 
 				// Player-Asteroids collision
@@ -306,6 +310,7 @@ int main(void)
 				}
 
 				// --------------------------BULLETS AND ENEMIES--------------------------------
+				enemyShootCountdown--;
 				// Update sentry positions
 				for (int i = 0; i < numSentries; i++) {
 					updateSentryPos(&sentries[i], frameCount);
@@ -313,7 +318,7 @@ int main(void)
 
 				// Draw Sentries
 				for (int i = 0; i < numSentries; i++) {
-					//drawSentry(&sentries[i], frameCount, currentBackground);
+					drawSentry(&sentries[i], frameCount, currentBackground);
 					cleanRect(backgroundContamination, (sentries[i].pos.x >> FIX) - sentries[i].anchor.x, (sentries[i].pos.y >> FIX) - sentries[i].anchor.y, 16, 10);
 				}
 
@@ -332,11 +337,14 @@ int main(void)
 					playerHit = 25;
 					if(livesLeft == 0){
 						aliensLeft--;
+						addLivesBuffer(bufferLCD, aliensLeft);
+						drawLCD(bufferLCD);
 						livesLeft = maxLives;
 
 						makeNewAlien(&ship, &playerStartPos, &currentAlien);
 						if(aliensLeft == 0){
 							gameState = MENU;
+
 						}
 					}
 					setLEDToIndicateHealth(livesLeft);
@@ -355,23 +363,27 @@ int main(void)
 				// Generate bullets
 				if(!enemyShootCountdown){
 					generateBullets(bullets, numBullets, sentries, numSentries, &ship.pos, bulletSpeed);
-					enemyShootCountdown = enemyShootResetValue;
+					enemyShootCountdown = getBulletCountdown(bulletRespawnRate);
 				}
 
 				//--------------------------POWERUPS---------------------------------
 				//Decreasing powerup effect countdowns and drawing powerups
+				powerupCountdown--;
 				for(uint8_t i = 0; i < 4; i++){
+					//Decresing powerupeffect countdown and applying end effect
 					if(powerupEffects[i]){
-						drawPowerup(&powerups[i], frameCount, currentBackground);
 						powerupEffects[i]--;
 						if((i == invincibilityPU) && (!powerupEffects[i])) //Invincibility powerup just ended.
 							setLEDToIndicateHealth(livesLeft);
 					}
+
+					//Draw active powerups
+					if(powerups[i].isActive)
+						drawPowerup(&powerups[i], frameCount, currentBackground);
 				}
 
 				//Generating powerups
 				if(powerupCountdown == 0){
-					powerupCountdown = powerupResetValue;
 					if(!RNGSeedSet){
 						RNGSeedSet = 1;
 						setRNGSeed((ship.pos.x & 0x000000FF) * (ship.pos.y & 0x000000FF)); //Semi random way to initialize RNG
@@ -380,29 +392,32 @@ int main(void)
 					powerupCountdown = getPowerupCountdown();
 				}
 
-				//Checking for colliossn with powerups
+				//Checking for colliossn with powerups AND START POWERUP EFFECT
 				for(uint8_t p = 0; p < numPowerups; p++){
-					if(circleCollision(&powerups[p].pos, &ship.pos, 0xF00)){
+					if(circleCollision(&powerups[p].pos, &ship.pos, 0x3500)){
 						powerups[p].isActive = 0;
 						contaminateRect(backgroundContamination, FIX_2_XStat(powerups[p]), FIX_2_YStat(powerups[p]), 3*4, 7*2);
 
 
 						switch (powerups[p].power){
 						case healthPU:
-							if(livesLeft < maxLives)
-								livesLeft++;
+							livesLeft = maxLives;
+							if(aliensLeft < aliensLeftStart){
+								aliensLeft++;
+								addLivesBuffer(bufferLCD, aliensLeft);
+								drawLCD(bufferLCD);
+							}
+							setLEDToIndicateHealth(livesLeft);
 						break;
 						case invincibilityPU:
-							powerupEffects[powerups[p].power] = getPowerupCountdown();
+							powerupEffects[powerups[p].power] = getPowerupCountdown() * 3;
 							setLED(PURPLE);
 							break;
 						case speedPU:
 						case gravityPU:
-							powerupEffects[powerups[p].power] = getPowerupCountdown();
+							powerupEffects[powerups[p].power] = getPowerupCountdown() * 3;
 						break;
 						}
-						//todo ROALD apply powerup effect;
-							//If necessary also make check for end of powerup
 					}
 				}
 
@@ -431,7 +446,10 @@ int main(void)
 						contaminateRect(backgroundContamination, (bullets[i].pos.x >> FIX) - bullets[i].anchor.x, (bullets[i].pos.y >> FIX) - bullets[i].anchor.y, 4, 4);
 					}
 				}
-
+				if (gameState == MENU) {
+					currentBackground = MainMenuBG;
+					drawBackground(currentBackground);
+				}
 				break;
 //=========================================HELP======================================================
 			case HELP:
@@ -517,7 +535,7 @@ char bulletHitPlayer(vector_t* playerPos, bullet bullets[], uint8_t numBullets){
 	for (uint8_t i = 0; i < numBullets; i++)
 	{
 		if(bullets[i].isActive){
-			if(circleCollision(playerPos, &bullets[i].pos, 0x1900)){
+			if(circleCollision(playerPos, &bullets[i].pos, 0x2A00)){
 				hit = 1;
 				bullets[i].isActive = 0;
 			}
@@ -547,19 +565,22 @@ void generateBullets(bullet bullets[], uint8_t numOfBullets, sentry_t* enemies, 
 		}
 	}
 }
+int16_t getBulletCountdown(int32_t bulletSpeed){
+	return FIXMUL(10 + (rand16bit() >> 12), bulletSpeed);
+}
 
 //----------------------------------POWERUPS-----------------------------------
 int16_t getPowerupCountdown(){
-	return 60 + (rand16bit() >> 10);
+	return 80 + (rand16bit() >> 10);
 }
 void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameCount, const uint8_t currentbackground[], GravitySource asteroids[], uint8_t numAsteroids){
 	void randomVector(vector_t* pos){
-		pos->x = FIXMUL(rand16bit(), 0x170) + 0x600;
-		pos->y = FIXMUL(rand16bit(), 0x170) + 0x600;
+		pos->x = FIXMUL(rand16bit(), 0x160) + 0x600;
+		pos->y = FIXMUL(rand16bit(), 0x160) + 0x600;
 	}
 	char collisionWithAsteroids(vector_t* pos){
 		for(uint8_t i = 0; i < numAsteroids; i++){
-			if(circleCollision(pos, &asteroids[i].pos, 0x6000))
+			if(circleCollision(pos, &asteroids[i].pos, 0x9000))
 				return 1;
 		}
 		return 0;
@@ -587,8 +608,8 @@ void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameC
 void updateSentryPos(sentry_t* sentry, uint32_t frameCount) {
 
 
-	int32_t offsetX = FIXMUL(cosi(frameCount + sentry->phase), sentry->orbitRadius);
-	int32_t offsetY = FIXMUL(sine(frameCount + sentry->phase), sentry->orbitRadius);
+	int32_t offsetX = FIXMUL(cosi((frameCount<<2) + sentry->phase), sentry->orbitRadius);
+	int32_t offsetY = FIXMUL(sine((frameCount<<2) + sentry->phase), sentry->orbitRadius);
 
 	sentry->pos.x = sentry->orbitPos.x + offsetX;
 	sentry->pos.y = sentry->orbitPos.y + offsetY;
@@ -599,7 +620,18 @@ void updateSentryPos(sentry_t* sentry, uint32_t frameCount) {
 
 
 void drawPowerup(powerup* powerup, uint32_t frameCount, const uint8_t* background){
-	drawSprite(background, Power_Up_Anim[frameCount/16 % 2], 3, 7, WHITE, FIX_2_X(powerup), FIX_2_Y(powerup));
+	uint8_t color;
+	switch (powerup->power){
+	case healthPU:
+		color = RED; break;
+	case invincibilityPU:
+		color = PURPLE; break;
+	case speedPU:
+		color = BLUE; break;
+	case gravityPU:
+		color = GREEN; break;
+	}
+	drawSprite(background, Power_Up_Anim[frameCount/16 % 2], 3, 7, color, FIX_2_X(powerup), FIX_2_Y(powerup));
 }
 
 void drawSentry(sentry_t* sentry, uint32_t frameCount, const uint8_t* background) {

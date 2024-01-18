@@ -26,8 +26,8 @@ void applyGravity(vector_t pos, vector_t* vel, GravitySource objects[], uint8_t 
 			forceVector.y *= gravForceMagnitude;
 
 			//The force is scaled down significantly
-			forceVector.x >>= 23;
-			forceVector.y >>= 23;
+			forceVector.x >>= 21;
+			forceVector.y >>= 21;
 
 			// Update body's velocity
 			vel-> x += forceVector.x;

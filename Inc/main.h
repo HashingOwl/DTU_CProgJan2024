@@ -43,7 +43,7 @@ char bulletHitPlayer(vector_t* playerPos, bullet bullets[], uint8_t numBullets);
 
 void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount, const uint8_t* background);
 void generateBullets(bullet bullets[], uint8_t numOfBullets, sentry_t* enemies, uint8_t numOfEnemies, vector_t *playerPos, uint16_t bulletSpeed);
-
+int16_t getBulletCountdown();
 //----------------------------------POWERUPS-----------------------------------
 int16_t getPowerupCountdown();
 void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameCount, const uint8_t currentbackground[], GravitySource asteroids[], uint8_t numAsteroids);
