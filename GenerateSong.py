@@ -26,7 +26,7 @@ currFreq = lowestC
 prescalar = 5
 ucFreq = 64000000
 toneLength = 0.25
-toneSteps = 16
+toneSteps = 2
 restVal = 2500
 
 

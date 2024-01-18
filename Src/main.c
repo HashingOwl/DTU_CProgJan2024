@@ -52,7 +52,7 @@ long int debug2 = 0;
 int main(void)
 {
 	//----------GAME CONTROL---------
-	uint32_t gameState = PLAYING;
+	uint32_t gameState = MENU;
 	uint32_t frameCount = 0; // Used in sprite animations
 
 	//ALIENS LEFT THROUGHOUT GAME
@@ -138,11 +138,12 @@ int main(void)
 
 	//Music
 	soundInit();
-	changeMusic(0);
-	initTimer15(639, 10000);
+	//changeMusic(0);
+
+	initTimer15(639, 5000);
 
 	//Miscenlaneous
-	//initBossScreen();
+	initBossScreen();
 	resetGrid(backgroundContamination);
 
 
@@ -162,6 +163,20 @@ int main(void)
 	drawScore(bufferLCD, readHighscore(),1);
 	addLivesBuffer(bufferLCD,3);
 	drawLCD(bufferLCD);
+
+	void resetGameVals(){
+		aliensLeft = aliensLeftStart;
+		aliensThrough = 0;
+		ship.pos = playerStartPos;
+		ship.vel.x = 0;
+		ship.vel.y = 0;
+		livesLeft = maxLives;
+		currentAlien = 1;
+		enemyShootCountdown = enemyShootResetValue;
+		for (int i = 0; i < numSentries; i++) { sentries[i].orbitPos.x=U_WIDTH/2; sentries[i].orbitPos.y= U_HEIGHT/2;  sentries[i].phase = 512*i; }
+		for (int i= 0; i < numBullets; i++) {bullets[i].isActive = 0;}
+		for (int i= 0; i < numPowerups; i++) {powerups[i].isActive = 0;}
+	}
 
 	//MAIN LOOP
 	while(1){
@@ -202,10 +217,11 @@ int main(void)
 				}
 				if (readJoystickButtons() && buttonLift) {
 					buttonLift = 0;
+					playBeep();
 					switch(currSelectionMainMenu) {
 						//Goto game
 						case 0:
-							//TODO add reset here.
+							resetGameVals();
 							currentBackground = BG_Stratosphere_2;
 							gameState = PLAYING;
 							initGame(currentBackground, asteroids, numAsteroids, livesLeft);
@@ -213,7 +229,7 @@ int main(void)
 						//Goto help screen
 						case 1:
 							currentBackground = HelpScreen;
-							drawBackground(currentBackground);//TODO tilføj den rigtige skærm for help
+							drawBackground(currentBackground);
 							gameState = HELP;
 							break;
 						//Dis/en-able sound
@@ -229,11 +245,6 @@ int main(void)
 				break;
 //=========================================PLAYING======================================================
 			case PLAYING:
-				//If button to enter main menu is hit go to main menu
-				if (readJoystickButtons() & 0) {
-					currentBackground=MainMenuBG;
-					drawBackground(currentBackground);
-				}
 
 				if(playerHit > 0)
 					playerHit--;
@@ -241,13 +252,14 @@ int main(void)
 				//-------------------INPUT----------------------------------
 				//Getting input from joystick. Passed as reference
 				vector_t input = {0, 0};
-				//readJoystickAnalog(&input.x, &input.y);
+				readAnalogJoystick(&input.x, &input.y);
 				// Temporary when testing from a board without proper joystick. Please outcomment it instead of deleting.
+				/*
 				joyVal = readDigitalJoystick();
 				input.y -= ((joyVal & 1) != 0) * 160;
 				input.y += ((joyVal & 2) != 0) * 160;
 				input.x -= ((joyVal & 4) != 0) * 160;
-				input.x += ((joyVal & 8) != 0) * 160;
+				input.x += ((joyVal & 8) != 0) * 160;*/
 
 				//------------------PLAYER PHYSICS---------------------------------
 				//Update velocity based on input and Powerup
@@ -277,6 +289,7 @@ int main(void)
 				//WIN CONDITION - Check if player hits bottom.
 				if(ship.pos.y > U_WIDTH - ship.radius - BORDER_PAD){
 					if(ship.pos.x > U_WIDTH - ship.radius - 0x2000){ //Win condition
+						playBeep();
 						bulletSpeed += bulletSpeedIncrease;
 						bulletRespawnRate = FIXMUL(bulletRespawnRate, 0xA0);
 						livesLeft = maxLives;
@@ -332,6 +345,7 @@ int main(void)
 
 				// Check and handle bullet collision with player
 				if(bulletHitPlayer(&ship.pos, bullets, numBullets)){
+					playBeep();
 					if(!powerupEffects[invincibilityPU])
 						livesLeft--;
 					playerHit = 25;
@@ -395,6 +409,7 @@ int main(void)
 				//Checking for colliossn with powerups AND START POWERUP EFFECT
 				for(uint8_t p = 0; p < numPowerups; p++){
 					if(circleCollision(&powerups[p].pos, &ship.pos, 0x3500)){
+						playBeep();
 						powerups[p].isActive = 0;
 						contaminateRect(backgroundContamination, FIX_2_XStat(powerups[p]), FIX_2_YStat(powerups[p]), 3*4, 7*2);
 
@@ -430,8 +445,8 @@ int main(void)
 				drawCleanBackground(currentBackground, backgroundContamination);
 				resetGrid(backgroundContamination);
 
-				gotoxy(0,0); printf("%4ld", debug1);
-				gotoxy(0,1); printf("%4ld", debug2);
+				//gotoxy(0,0); printf("%4ld", debug1);
+				//gotoxy(0,1); printf("%4ld", debug2);
 
 				//------------Contaminate-for-next-frame--------------------
 				// Player
@@ -446,6 +461,14 @@ int main(void)
 						contaminateRect(backgroundContamination, (bullets[i].pos.x >> FIX) - bullets[i].anchor.x, (bullets[i].pos.y >> FIX) - bullets[i].anchor.y, 4, 4);
 					}
 				}
+				if (readJoystickButtons() && buttonLift) {
+						playBeep();
+						buttonLift = 0;
+						gameState = MENU;
+				}
+				else if (readJoystickButtons() == 0){
+					buttonLift = 1;
+				}
 				if (gameState == MENU) {
 					currentBackground = MainMenuBG;
 					drawBackground(currentBackground);
@@ -455,7 +478,7 @@ int main(void)
 			case HELP:
 				// Check for input, showing either boss_bakcground, or changing state to MENU or PLAYING
 				if (readJoystickButtons() && buttonLift) {
-					//TODO tilføj at gemme score.
+					playBeep();
 					drawScore(bufferLCD,aliensThrough,0);
 					buttonLift = 0;
 					currentBackground = MainMenuBG;
