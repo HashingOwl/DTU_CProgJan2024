@@ -130,9 +130,9 @@ int main(void)
 	//initBossScreen();
 	resetGrid(backgroundContamination);
 
-	// INITIALISATION DRAWING: Should be made whenever we set the gamemode to PLAYING
-	drawBackground(currentBackground);
-	setLEDToIndicateHealth(livesLeft);
+	if(gameState = PLAYING)
+		initGame(currentBackground, asteroids, numAsteroids, livesLeft);
+
 
 	//MAIN LOOP
 	while(1){
@@ -178,14 +178,8 @@ int main(void)
 						case 0:
 							//TODO add reset here.
 							currentBackground = BG_Stratosphere_2;
-							drawBackground(currentBackground);
-							// Asteroids
-							for (int i = 0; i < numAsteroids; i++) {
-								drawAsteroid(&asteroids[i], currentBackground);
-								// Delay - without this it doesn't work for mysterious reasons.
-								for (uint32_t i = 0; i < 360000; i++);
-							}
 							gameState = PLAYING;
+							initGame(currentBackground, asteroids, numAsteroids, livesLeft);
 							break;
 						//Goto help screen
 						case 1:
@@ -375,6 +369,17 @@ int main(void)
 }
 
 //----------------------------------GAME CONTROL----------------------------
+void initGame(uint8_t* currentBackground, GravitySource asteroids[], uint8_t numAsteroids, uint8_t livesLeft){
+	drawBackground(currentBackground);
+	setLEDToIndicateHealth(livesLeft);
+
+	//Draw asteroids
+	for (int i = 0; i < numAsteroids; i++) {
+		drawAsteroid(&asteroids[i], currentBackground);
+		// Delay - without this it doesn't work for mysterious reasons.
+		for (uint32_t i = 0; i < 360000; i++);
+	}
+}
 
 void shipUpdatePosition(GravityTarget *ship){
 	ship->pos = addVectors(&(ship->pos), &(ship->vel));

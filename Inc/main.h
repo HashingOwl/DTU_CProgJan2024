@@ -26,7 +26,9 @@ typedef struct {
 
 
 //----------------------------------GAME CONTROL----------------------------
+void initGame(uint8_t* currentBackground, GravitySource asteroids[], uint8_t numAsteroids, uint8_t livesLeft);
 
+//----------------------------------PLAYER CONTROL----------------------------
 void shipUpdatePosition(GravityTarget *ship);
 void makeNewAlien(GravityTarget *ship, vector_t *startPos, uint8_t* currentAlien);
 
