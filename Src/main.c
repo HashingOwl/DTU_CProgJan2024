@@ -1,12 +1,11 @@
-#include <joystick.h>
+#include <io.h>
+#include "joystickAnalog.h"
 #include "stm32f30x_conf.h" // STM32 config
 #include "30010_io.h" 		// Input/output library for this course
 
 #include "math.h"
 #include "kinematics.h"
-#include "io.h"
 #include "soundLib.h"
-#include "LED.h"
 
 #include "graphics.h"
 #include "GraphicData.h"
@@ -24,6 +23,9 @@
 
 #define FIX_2_X(a) ((a->pos.x >> FIX) - a->anchor.x)
 #define FIX_2_Y(a) ((a->pos.y >> FIX) - a->anchor.y)
+
+#define speedPU 0
+#define gravityPU 1
 /*
 #define MIN_X 0x200 //2.00
 #define MAX_X 0x7B00 //123.00
@@ -40,28 +42,15 @@ long int debug2 = 0;
 
 int main(void)
 {
-	// Init modules
-	uart_init(1000000);
-	initBossScreen();
-	initJoystickAnalog();
-	soundInit();
-	changeMusic(0);
-	initTimer15(19, 3600000);
+	//----------GAME CONTROL---------
+	uint32_t gameState = PLAYING;
+	uint32_t frameCount = 0; // Used in sprite animations
 
-	initLED();
+	uint8_t aliensLeftStart = 3; //Max number of aliens to die before game over
+	uint8_t aliensLeft = aliensLeftStart;
+	uint8_t aliensThrough = 0; //score
 
-	// While using mini joystick as substitute for proper joystick
-	setupJoystickPins();
-
-	int gameState;
-	gameState = MENU;
-	// Used in sprite animations
-	uint32_t frameCount = 0;
-
-	uint8_t aliensDead = 0;
-	const uint8_t maxAliensDead = 3;
-
-	//PLAYER Ship
+	//----------PLAYER ALIEN---------
 	vector_t playerStartPos = {100 << FIX, 10<<FIX};
 	GravityTarget ship = {
 			.pos = playerStartPos,
@@ -73,11 +62,9 @@ int main(void)
 	uint8_t livesLeft = maxLives;
 	uint8_t currentAlien = 1;
 
-	uint8_t aliensThrough = 0;
 
-	// Asteroids creating gravity
+	//----------ASTEROIDS-------------
 	uint8_t numAsteroids = 7;
-
 	GravitySource asteroids[7] = {
 			{.pos = {U_WIDTH/2, U_HEIGHT/2}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
 			{.pos = {40 << FIX, 50 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
@@ -88,12 +75,7 @@ int main(void)
 			{.pos = {100 << FIX, 170 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
 	};
 
-	uint8_t numBullets = 20;
-	bullet bullets[20] = {};
-	uint16_t bulletSpeed = 0x180;
-	uint16_t bulletSpeedIncrease = 0x50;
-
-	//Enemies
+	//----------ENEMIES--------------
 	vector_t enemies[2] = {
 			{70 << FIX, 100 << FIX},
 			{130 << FIX, 100 << FIX},
@@ -102,39 +84,57 @@ int main(void)
 	int16_t enemyShootResetValue = 20 * 5; // 20 * seconds between shoot
 	int16_t enemyShootCountdown = enemyShootResetValue;
 
-	//Powerups
+	//----------BULLETS--------------
+	uint8_t numBullets = 20;
+	bullet bullets[20] = {};
+	uint16_t bulletSpeed = 0x180;
+	uint16_t bulletSpeedIncrease = 0x50;
+
+	//----------POWERUPS--------------
 	char RNGSeedSet = 0;
 	uint16_t powerupResetValue = 20*10;
 	uint16_t powerupCountdown = 100;
 	powerup powerups[4] = {};
 	uint8_t numPowerups = 4;
+	uint8_t powerupEffects[2] = {};
 
+	//----------MENU------------------
+	uint8_t joyVal;
+	uint8_t joyValPrev;
+	int8_t currSelectionMainMenu = 0;
+	uint8_t buttonLift = 1;
 
-	//Console and graphic
-	//int32_t gameSize = consoleSize << FIX;
+	//----------CONSOLE AND GRAPHICS--------------
 	uint8_t backgroundContamination[P_WIDTH * P_HEIGHT / 8] = {};
+	const uint8_t* currentBackground = BG_Stratosphere_2; // Not actually a constant, it can be changed in software. It's a pointer to a constant.
+
+	//----------INITIALISATION OF HARD- AND SOFTWARE----------
+	// Output
+	uart_init(1000000);
+	initLED();
+	setLED(BLUE);
+	//initLCD();
+
+	//Input
+	initAnalogJoystick();
+	initDigitalJoystick(); // While using mini joystick as substitute for proper joystick
+	joyVal = readAnalogJoystickDigital();
+	joyValPrev = joyVal;
+
+	//Music
+	soundInit();
+	changeMusic(0);
+	initTimer15(19, 3600000);
+
+	//Miscenlaneous
+	//initBossScreen();
 	resetGrid(backgroundContamination);
-	// Not actually a constant, it can be changed in software. It's a pointer to a constant.
-	const uint8_t* currentBackground = MainMenuBG;
 
 	// INITIALISATION DRAWING: Should be made whenever we set the gamemode to PLAYING
 	drawBackground(currentBackground);
 	setLEDToIndicateHealth(livesLeft);
 
-	gotoxy(0, 0);
-
-
-
-
-	gotoxy(0,0);
-
-	printf("%4ld", debug1);
-
-	uint8_t joyVal = readJoy();
-	uint8_t joyValPrev = joyVal;
-	int8_t currSelectionMainMenu = 0;
-	uint8_t buttonLift = 1;
-
+	//MAIN LOOP
 	while(1){
 		if(updateFrame){
 			updateFrame = 0;
@@ -143,7 +143,7 @@ int main(void)
 			switch (gameState) {
 //==========================================MENU========================================================
 			case MENU:
-				joyVal = readJoystickDigital();
+				joyVal = readAnalogJoystickDigital();
 				if (joyVal != joyValPrev) {
 					for(uint8_t i = 0;i < 2; i++){
 						contaminateRect(backgroundContamination,46+i*95,90+currSelectionMainMenu*38,12,12);
@@ -223,7 +223,7 @@ int main(void)
 				vector_t input = {0, 0};
 				//readJoystickAnalog(&input.x, &input.y);
 				// Temporary when testing from a board without proper joystick. Please outcomment it instead of deleting.
-				joyVal = readJoy();
+				joyVal = readAnalogJoystickDigital();
 				input.y -= ((joyVal & 1) != 0) * 20;
 				input.y += ((joyVal & 2) != 0) * 20;
 				input.x -= ((joyVal & 4) != 0) * 20;
@@ -287,11 +287,11 @@ int main(void)
 					livesLeft--;
 					playerHit = 25;
 					if(livesLeft == 0){
-						aliensDead++;
+						aliensLeft--;
 						livesLeft = maxLives;
 
 						makeNewAlien(&ship, &playerStartPos, &currentAlien);
-						if(aliensDead == maxAliensDead){
+						if(aliensLeft == 0){
 							gameState = MENU;
 						}
 					}
@@ -516,19 +516,7 @@ void setLEDToIndicateHealth(uint8_t livesLeft){
 //----------------------------------FRAME TIMER---------------------------------
 void TIM1_BRK_TIM15_IRQHandler(void) {
 	updateFrame = 1;
-	TIM15->SR &= ~0x0001; // Clear interrupt bit
-}
-
-void initTimer15(uint16_t prescale, uint32_t reloadValue){
-	RCC->APB2ENR |= RCC_APB2Periph_TIM15;
-	TIM15->CR1 &= 0b1111010001110000;
-	TIM15->CR1 |= TIM_CR1_CEN;
-	TIM15->ARR = reloadValue;
-	TIM15->PSC = prescale;
-
-	TIM15->DIER |= 0x0001; // Enable timer 15 interrupts
-	NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, 10); // Set interrupt priority
-	NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn); // Enable interrupt
+	resetTimer15();
 }
 
 //This interrupt handles BossScreen. Fix baggrund på return.

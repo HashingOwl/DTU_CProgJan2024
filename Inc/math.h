@@ -1,3 +1,4 @@
+
 /*
  * math.h
  *
@@ -9,7 +10,7 @@
 #define FIXMUL(a, b) 	((a)*(b) >> FIX)
 #define FIXDIV(a, b) 	((a << FIX)/(b))
 #define FIXSQUARE(a) 	FIXMUL(a, a)
-#include <stdio.h>
+#include <io.h>
 
 #ifndef MATH_H_
 #define MATH_H_

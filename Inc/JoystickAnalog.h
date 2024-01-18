@@ -10,9 +10,9 @@
 
  // Whatever needs to be defined
 /* Exported functions -------------------------------------------------- */
-void initJoystickAnalog ();
-void readJoystickAnalog();
-uint8_t readJoystickDigital();
+void initAnalogJoystick();
 uint8_t readJoystickButtons(void);
+uint8_t readAnalogJoystickDigital();
+void readAnalogJoystick(uint32_t* x, uint32_t* y);
 #endif /* _ANSI_H_ */
 

@@ -4,10 +4,9 @@
  *  Created on: Jan 5, 2024
  *      Author: rotho
  */
+#include <io.h>
 #include "stm32f30x_conf.h" // STM32 config
 #include "30010_io.h" 		// Input/output library for this course
-#include <stdio.h>
-#include "io.h"
 
 #define RIGHT_JOY1 GPIOC, 0
 #define UP_JOY1 GPIOA, 4
@@ -51,7 +50,7 @@ void setPort(GPIO_TypeDef *port, uint8_t pins, uint8_t value){
 	port -> ODR |= value;	//Setting the pins in the array
 }
 
-void setupJoystickPins(){
+void initDigitalJoystick(){
 	RCC-> AHBENR |= RCC_AHBPeriph_GPIOA;
 	RCC-> AHBENR |= RCC_AHBPeriph_GPIOB;
 	RCC-> AHBENR |= RCC_AHBPeriph_GPIOC;
@@ -63,7 +62,8 @@ void setupJoystickPins(){
 	setPinToInput(GPIOC, 1);
 }
 
-void setupLEDPins(){
+void initLED(){
+	//Enable clock for GPIO ports A, B and C
 	RCC-> AHBENR |= RCC_AHBPeriph_GPIOA;
 	RCC-> AHBENR |= RCC_AHBPeriph_GPIOB;
 	RCC-> AHBENR |= RCC_AHBPeriph_GPIOC;
@@ -72,6 +72,7 @@ void setupLEDPins(){
 	setPinToOutput(LED_G);
 	setPinToOutput(LED_B);
 
+	//Disable LED
 	setPinValue(LED_R, 1);
 	setPinValue(LED_G, 1);
 	setPinValue(LED_B, 1);
@@ -87,7 +88,7 @@ char readSinglePin(GPIO_TypeDef *port, uint8_t pin){
 }
 
 
-uint8_t readJoy(){
+uint8_t readDigitalJoystick(){
 	uint8_t joy = 0;
 	joy |= readSinglePin(UP_JOY1) << 0;
 	joy |= readSinglePin(DOWN_JOY1) << 1;
@@ -98,9 +99,34 @@ uint8_t readJoy(){
 	return joy;
 }
 
-//void setLED(uint8_t color){  //..0RGB
-//	color = ~color;
-//	setPinValue(LED_R, (color & (1 << 2)));
-//	setPinValue(LED_G, (color & (1 << 1)));
-//	setPinValue(LED_B, (color & 1));
-//}
+void setLED(uint8_t color) {
+	GPIOB->ODR |= (0x0001 << 4);
+	GPIOC->ODR |= (0x0001 << 7);
+	GPIOA->ODR |= (0x0001 << 9);
+	if (color & 0x0001){
+		GPIOB->ODR &= ~(0x0001 << 4);
+	}
+	if (color & 0x0002){
+		GPIOC->ODR &= ~(0x0001 << 7);
+	}
+	if (color & 0x0004){
+		GPIOA->ODR &= ~(0x0001 << 9);
+	}
+}
+
+//Timer
+void initTimer15(uint16_t prescale, uint32_t reloadValue){
+	RCC->APB2ENR |= RCC_APB2Periph_TIM15;
+	TIM15->CR1 &= 0b1111010001110000;
+	TIM15->CR1 |= TIM_CR1_CEN;
+	TIM15->ARR = reloadValue;
+	TIM15->PSC = prescale;
+
+	TIM15->DIER |= 0x0001; // Enable timer 15 interrupts
+	NVIC_SetPriority(TIM1_BRK_TIM15_IRQn, 10); // Set interrupt priority
+	NVIC_EnableIRQ(TIM1_BRK_TIM15_IRQn); // Enable interrupt
+}
+void resetTimer15(){
+	TIM15->SR &= ~0x0001; // Clear interrupt bit
+}
+

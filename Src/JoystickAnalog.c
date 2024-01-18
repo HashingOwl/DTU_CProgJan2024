@@ -1,12 +1,12 @@
 #include "stm32f30x_conf.h" // STM32 config
-
-/*
- Ting at forbedre:
- -Brug interupts i stedet for at vente
- -Lav adjustable pins
- */
-
-void initJoystickAnalog () {
+//
+///*
+// Ting at forbedre:
+// -Brug interupts i stedet for at vente
+// -Lav adjustable pins
+// */
+//
+void initAnalogJoystick () {
 	//Initializes PA7 as Joystick-X and PA6 as Joysticj-Y
 	RCC->AHBENR |= RCC_AHBPeriph_GPIOA; // Enable clock for GPIO Port A
 
@@ -71,7 +71,7 @@ uint16_t JoystickYADC() {
 	return 4095-ADC_GetConversionValue(ADC1);
 }
 
-uint8_t readJoystickDigital() {
+uint8_t readAnalogJoystickDigital() {
 	uint8_t res = 0;
 	uint16_t adcVal;
 
@@ -98,7 +98,7 @@ uint8_t readJoystickDigital() {
 	return res;
 }
 
-void readJoystickAnalog(uint32_t* x, uint32_t* y) {
+void readAnalogJoystick(uint32_t* x, uint32_t* y) {
 	int32_t adcVal;
 
 	adcVal = JoystickXADC();
