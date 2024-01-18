@@ -24,8 +24,14 @@
 #define FIX_2_X(a) ((a->pos.x >> FIX) - a->anchor.x)
 #define FIX_2_Y(a) ((a->pos.y >> FIX) - a->anchor.y)
 
-#define speedPU 0
-#define gravityPU 1
+#define FIX_2_XStat(a) ((a.pos.x >> FIX) - a.anchor.x)
+#define FIX_2_YStat(a) ((a.pos.y >> FIX) - a.anchor.y)
+
+#define healthPU 0
+#define invincibilityPU 1
+#define speedPU 2
+#define gravityPU 3
+
 /*
 #define MIN_X 0x200 //2.00
 #define MAX_X 0x7B00 //123.00
@@ -45,7 +51,7 @@ long int debug2 = 0;
 int main(void)
 {
 	//----------GAME CONTROL---------
-	uint32_t gameState = MENU;
+	uint32_t gameState = PLAYING;
 	uint32_t frameCount = 0; // Used in sprite animations
 
 	uint8_t aliensLeftStart = 3; //Max number of aliens to die before game over
@@ -101,7 +107,7 @@ int main(void)
 	uint16_t powerupCountdown = 100;
 	powerup powerups[4] = {};
 	uint8_t numPowerups = 4;
-	uint8_t powerupEffects[2] = {};
+	uint8_t powerupEffects[4] = {};
 
 	//----------MENU------------------
 	uint8_t joyVal;
@@ -111,7 +117,7 @@ int main(void)
 
 	//----------CONSOLE AND GRAPHICS--------------
 	uint8_t backgroundContamination[P_WIDTH * P_HEIGHT / 8] = {};
-	const uint8_t* currentBackground = MainMenuBG; // Not actually a constant, it can be changed in software. It's a pointer to a constant.
+	const uint8_t* currentBackground; // Not actually a constant, it can be changed in software. It's a pointer to a constant.
 
 	//----------INITIALISATION OF HARD- AND SOFTWARE----------
 	// Output
@@ -134,11 +140,15 @@ int main(void)
 	//Miscenlaneous
 	//initBossScreen();
 	resetGrid(backgroundContamination);
-	drawBackground(currentBackground);
-	gameState = MENU;
 
-	if(gameState == PLAYING)
+
+	if(gameState == PLAYING){
+		currentBackground = BG_Stratosphere_2;
 		initGame(currentBackground, asteroids, numAsteroids, livesLeft);
+	}else if (gameState == MENU){
+		currentBackground = MainMenuBG;
+		drawBackground(currentBackground);
+	}
 
 
 	//MAIN LOOP
@@ -224,18 +234,23 @@ int main(void)
 				vector_t input = {0, 0};
 				//readJoystickAnalog(&input.x, &input.y);
 				// Temporary when testing from a board without proper joystick. Please outcomment it instead of deleting.
-				joyVal = readAnalogJoystickDigital();
+				joyVal = readDigitalJoystick();
 				input.y -= ((joyVal & 1) != 0) * 20;
 				input.y += ((joyVal & 2) != 0) * 20;
 				input.x -= ((joyVal & 4) != 0) * 20;
 				input.x += ((joyVal & 8) != 0) * 20;
 
 				//------------------PLAYER PHYSICS---------------------------------
-				//Update velocity based on input
+				//Update velocity based on input and Powerup
+				if(powerupEffects[speedPU]){
+					input.x = FIXMUL(input.x, 0x1A0);
+					input.y = FIXMUL(input.y, 0x1A0);
+				}
 				ship.vel.x += input.x;
 				ship.vel.y += input.y;
 
-				applyGravity(ship.pos, &ship.vel, asteroids, numAsteroids);
+				if(!powerupEffects[gravityPU]) //Only apply gravity if antigravity powerup is NOT active;
+					applyGravity(ship.pos, &ship.vel, asteroids, numAsteroids);
 				shipUpdatePosition(&ship);
 
 
@@ -301,7 +316,8 @@ int main(void)
 
 				// Check and handle bullet collision with player
 				if(bulletHitPlayer(&ship.pos, bullets, numBullets)){
-					livesLeft--;
+					if(!powerupEffects[invincibilityPU])
+						livesLeft--;
 					playerHit = 25;
 					if(livesLeft == 0){
 						aliensLeft--;
@@ -332,6 +348,16 @@ int main(void)
 				}
 
 				//--------------------------POWERUPS---------------------------------
+				//Decreasing powerup effect countdowns and drawing powerups
+				for(uint8_t i = 0; i < 4; i++){
+					if(powerupEffects[i]){
+						drawPowerup(&powerups[i], frameCount, currentBackground);
+						powerupEffects[i]--;
+						if((i == invincibilityPU) && (!powerupEffects[i])) //Invincibility powerup just ended.
+							setLEDToIndicateHealth(livesLeft);
+					}
+				}
+
 				//Generating powerups
 				if(powerupCountdown == 0){
 					powerupCountdown = powerupResetValue;
@@ -339,7 +365,7 @@ int main(void)
 						RNGSeedSet = 1;
 						setRNGSeed((ship.pos.x & 0x000000FF) * (ship.pos.y & 0x000000FF)); //Semi random way to initialize RNG
 					}
-					generateNewPowerup(powerups, numPowerups);
+					generateNewPowerup(powerups, numPowerups, frameCount, currentBackground, asteroids, numAsteroids);
 					powerupCountdown = getPowerupCountdown();
 				}
 
@@ -347,7 +373,23 @@ int main(void)
 				for(uint8_t p = 0; p < numPowerups; p++){
 					if(circleCollision(&powerups[p].pos, &ship.pos, 0xF00)){
 						powerups[p].isActive = 0;
-						//todo ROALD remove powerup;
+						contaminateRect(backgroundContamination, FIX_2_XStat(powerups[p]), FIX_2_YStat(powerups[p]), 3*4, 7*2);
+
+
+						switch (powerups[p].power){
+						case healthPU:
+							if(livesLeft < maxLives)
+								livesLeft++;
+						break;
+						case invincibilityPU:
+							powerupEffects[powerups[p].power] = getPowerupCountdown();
+							setLED(PURPLE);
+							break;
+						case speedPU:
+						case gravityPU:
+							powerupEffects[powerups[p].power] = getPowerupCountdown();
+						break;
+						}
 						//todo ROALD apply powerup effect;
 							//If necessary also make check for end of powerup
 					}
@@ -406,7 +448,7 @@ int main(void)
 }
 
 //----------------------------------GAME CONTROL----------------------------
-void initGame(uint8_t* currentBackground, GravitySource asteroids[], uint8_t numAsteroids, uint8_t livesLeft){
+void initGame(const uint8_t* currentBackground, GravitySource asteroids[], uint8_t numAsteroids, uint8_t livesLeft){
 	drawBackground(currentBackground);
 	setLEDToIndicateHealth(livesLeft);
 
@@ -498,19 +540,32 @@ void generateBullets(bullet bullets[], uint8_t numOfBullets, sentry_t* enemies, 
 int16_t getPowerupCountdown(){
 	return 60 + (rand16bit() >> 10);
 }
-void generateNewPowerup(powerup powerups[], uint8_t numPowerups){
+void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameCount, const uint8_t currentbackground[], GravitySource asteroids[], uint8_t numAsteroids){
+	void randomVector(vector_t* pos){
+		pos->x = FIXMUL(rand16bit(), 0x170) + 0x600;
+		pos->y = FIXMUL(rand16bit(), 0x170) + 0x600;
+	}
+	char collisionWithAsteroids(vector_t* pos){
+		for(uint8_t i = 0; i < numAsteroids; i++){
+			if(circleCollision(pos, &asteroids[i].pos, 0x6000))
+				return 1;
+		}
+		return 0;
+	}
+
 	for(uint8_t i = 0; i < numPowerups; i++){
 		if(!powerups[i].isActive){
 			powerups[i].framesLeft = 60 + (rand16bit() >> 10);
-			powerups[i].pos.x = FIXMUL(rand16bit(), 0x170) + 0x600; //These are magic numbers to ensure the powerups are generated within bounds
-			powerups[i].pos.y = FIXMUL(rand16bit(), 0x170) + 0x600;
-			powerups[i].isActive = 1;
 
-			//TODO VALDEMAR print powerup
-			gotoxy(powerups[i].pos.x >> FIX, powerups[i].pos.y >> (FIX + 1));
-			fgcolor(RED);
-			bgcolor(WHITE);
-			printf("X");
+			vector_t pos;
+			randomVector(&pos);
+			while(collisionWithAsteroids(&pos)) //Making sure powerup does not spawn on asteroid
+				randomVector(&pos);
+
+			powerups[i].pos.x = pos.x; //These are magic numbers to ensure the powerups are generated within bounds
+			powerups[i].pos.y = pos.y;
+			powerups[i].isActive = 1;
+			powerups[i].power = powerups[i].pos.x & 0b11; //Semi random method of choosing power
 			break;
 		}
 	}

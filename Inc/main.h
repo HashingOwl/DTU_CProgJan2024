@@ -9,8 +9,6 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
-enum powerupEnum {health, speed};
-
 typedef struct {
 	vector_t pos, anchor;
 	uint8_t power;
@@ -32,7 +30,7 @@ typedef struct {
 
 
 //----------------------------------GAME CONTROL----------------------------
-void initGame(uint8_t* currentBackground, GravitySource asteroids[], uint8_t numAsteroids, uint8_t livesLeft);
+void initGame(const uint8_t* currentBackground, GravitySource asteroids[], uint8_t numAsteroids, uint8_t livesLeft);
 
 //----------------------------------PLAYER CONTROL----------------------------
 void shipUpdatePosition(GravityTarget *ship);
@@ -48,7 +46,7 @@ void generateBullets(bullet bullets[], uint8_t numOfBullets, sentry_t* enemies, 
 
 //----------------------------------POWERUPS-----------------------------------
 int16_t getPowerupCountdown();
-void generateNewPowerup(powerup powerups[], uint8_t numPowerups);
+void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameCount, const uint8_t currentbackground[], GravitySource asteroids[], uint8_t numAsteroids);
 
 //--------------------------------DRAWING FUNCITONS---------------------------------------------
 
