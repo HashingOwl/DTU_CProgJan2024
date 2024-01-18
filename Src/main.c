@@ -11,6 +11,7 @@
 #include "GraphicData.h"
 #include "main.h"
 #include "Highscore.h"
+#include "lcd.h"
 // Game states
 #define MENU 1
 #define PLAYING 2
@@ -126,6 +127,7 @@ int main(void)
 	setLED(BLUE);
 	lcd_init();
 
+	//while(1);
 	//Input
 	initAnalogJoystick();
 	initDigitalJoystick(); // While using mini joystick as substitute for proper joystick
@@ -150,7 +152,13 @@ int main(void)
 		drawBackground(currentBackground);
 	}
 
-
+	//Init display
+	uint8_t bufferLCD[512];
+	clearLCDBuffer(bufferLCD);
+	//resetScore();
+	drawScore(bufferLCD, 1234,0);
+	drawScore(bufferLCD, readHighscore(),1);
+	drawLCD(bufferLCD);
 	//MAIN LOOP
 	while(1){
 		if(updateFrame){
@@ -273,7 +281,8 @@ int main(void)
 					setLEDToIndicateHealth(livesLeft);
 
 					//TODO ALBERT print new score
-
+					drawScore(bufferLCD, aliensThrough,0);
+					drawLCD(bufferLCD);
 					makeNewAlien(&ship, &playerStartPos, &currentAlien);
 				}
 
@@ -427,6 +436,7 @@ int main(void)
 				// Check for input, showing either boss_bakcground, or changing state to MENU or PLAYING
 				if (readJoystickButtons() && buttonLift) {
 					//TODO tilføj at gemme score.
+					drawScore(bufferLCD,aliensThrough,0);
 					buttonLift = 0;
 					currentBackground = MainMenuBG;
 					drawBackground(currentBackground);
