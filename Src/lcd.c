@@ -2,6 +2,7 @@
 #include "30010_io.h" 		// Input/output library for this course
 #include <string.h>
 #include "Highscore.h"
+#include "GraphicData.h"
 const char character_data[95][5] = {
   {0x00, 0x00, 0x00, 0x00, 0x00},
   {0x00, 0x5F, 0x5F, 0x00, 0x00},
@@ -165,5 +166,20 @@ void addLCDbuffer(uint8_t* buffer,const uint8_t spirteData[], uint16_t spirteWid
 				buffer[xCoord] |= (!!(spirteData[i+j*spirteWidth] & (1<<k)))<< (yCoord & 0x07);
 			}
 		}
+	}
+}
+
+void addLivesBuffer(uint8_t* buffer,uint8_t lives) {
+	for (uint8_t i = 0; i < 3;i++){
+		addLCDbuffer(buffer,emptyAlien, 3, 4, 0+i*16, 24);
+	}
+	if (lives >= 1) {
+		addLCDbuffer(buffer,Alien1_1, 3, 4, 0, 24);
+	}
+	if (lives >= 2) {
+		addLCDbuffer(buffer,Alien2_1, 3, 4, 16, 24);
+	}
+	if (lives>= 3) {
+		addLCDbuffer(buffer,Alien3_1, 2, 4, 32, 24);
 	}
 }

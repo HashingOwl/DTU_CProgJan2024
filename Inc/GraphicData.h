@@ -41,6 +41,9 @@ extern const uint8_t Sentry_1[5*4];
 extern const uint8_t Sentry_2[5*4];
 extern const uint8_t Sentry_3[5*4];
 
+//----EmptyAlien----
+extern const uint8_t emptyAlien[3*6];
+
 //------Alien1------
 extern const uint8_t Alien1_1[3*6];
 extern const uint8_t Alien1_2[3*6];
@@ -71,4 +74,5 @@ extern const uint8_t TestBG[128*64/4];
 extern const uint8_t BG_Stratosphere_2[200*200/8];
 extern const uint8_t bossScreenBG[200*200/8];
 extern const uint8_t MainMenuBG[5000];
+const uint8_t HelpScreen[5000];
 #endif /* GRAPHICDATA_H_ */
