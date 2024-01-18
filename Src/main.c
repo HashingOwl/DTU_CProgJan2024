@@ -142,13 +142,25 @@ int main(void)
 	if(gameState == PLAYING)
 		initGame(currentBackground, asteroids, numAsteroids, livesLeft);
 
-	//Init display
+	//Init LCD-display
 	uint8_t bufferLCD[512];
 	clearLCDBuffer(bufferLCD);
 	//resetScore();
-	drawScore(bufferLCD, 1234,0);
+	drawScore(bufferLCD, 0,0);
 	drawScore(bufferLCD, readHighscore(),1);
+	addLivesBuffer(bufferLCD,3);
 	drawLCD(bufferLCD);
+	for (uint32_t i= 0;i<10000000;i++);
+	addLivesBuffer(bufferLCD,2);
+	drawLCD(bufferLCD);
+	for (uint32_t i= 0;i<10000000;i++);
+	addLivesBuffer(bufferLCD,1);
+	drawLCD(bufferLCD);
+	for (uint32_t i= 0;i<10000000;i++);
+	addLivesBuffer(bufferLCD,0);
+	drawLCD(bufferLCD);
+	for (uint32_t i= 0;i<10000000;i++);
+
 	//MAIN LOOP
 	while(1){
 		if(updateFrame){
@@ -198,7 +210,7 @@ int main(void)
 							break;
 						//Goto help screen
 						case 1:
-							currentBackground = BG_Stratosphere_2;
+							currentBackground = HelpScreen;
 							drawBackground(currentBackground);//TODO tilføj den rigtige skærm for help
 							gameState = HELP;
 							break;
@@ -588,7 +600,7 @@ void TIM1_BRK_TIM15_IRQHandler(void) {
 	resetTimer15();
 }
 
-//This interrupt handles BossScreen. Fix baggrund på return.
+//This interrupt handles BossScreen.
 void EXTI4_IRQHandler(void) {
 	//Pauses everything
 	TIM15->DIER &= ~(0x0001);
