@@ -480,6 +480,27 @@ void generateNewPowerup(powerup powerups[], uint8_t numPowerups){
 }
 
 //--------------------------------DRAWING FUNCITONS---------------------------------------------
+void updateSentryPos(sentry_t* sentry, uint32_t frameCount) {
+
+
+	int32_t offsetX = FIXMUL(cosi(frameCount + sentry->phase), sentry->orbitRadius);
+	int32_t offsetY = FIXMUL(sine(frameCount + sentry->phase), sentry->orbitRadius);
+
+	sentry->pos.x = sentry->orbitPos.x + offsetX;
+	sentry->pos.y = sentry->orbitPos.y + offsetY;
+
+	debug1 = sentry->pos.x;
+	debug2 = sentry->pos.y;
+}
+
+
+void drawPowerup(powerup* powerup, uint32_t frameCount, const uint8_t* background){
+	drawSprite(background, Power_Up_Anim[frameCount/16 % 2], 3, 7, WHITE, FIX_2_X(powerup), FIX_2_Y(powerup));
+}
+
+void drawSentry(sentry_t* sentry, uint32_t frameCount, const uint8_t* background) {
+	drawSprite(background, Sentry_Anim[frameCount/8 % 4], 4, 5, RED, FIX_2_X(sentry), FIX_2_Y(sentry));
+}
 
 void drawBullet(bullet* bullet, uint32_t frameCount, const uint8_t* background){
 	drawSprite(background, Bullet_Anim[frameCount/8 % 3], 1, 2, WHITE, FIX_2_X(bullet), FIX_2_Y(bullet));
@@ -498,13 +519,9 @@ void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const ui
 		drawSprite(background, playerHit ? Alien2_Dead: Alien2_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
 		break;
 	case 3:
-		drawSprite(background, playerHit ? Alien3_Dead: Alien3_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
+		drawSprite(background, playerHit ? Alien3_Dead: Alien3_Anim[frameCount/8 % 2], 2, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
 		break;
 	}
-}
-
-void drawSentry(GravitySource* sentry, const uint8_t* background) {
-
 }
 
 //----------------------------------LED-----------------------------------------

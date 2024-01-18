@@ -12,11 +12,17 @@
 enum powerupEnum {health, speed};
 
 typedef struct {
-	vector_t pos;
+	vector_t pos, anchor;
 	uint8_t power;
 	uint16_t framesLeft;
 	char isActive;
 }powerup;
+
+typedef struct {
+	vector_t orbitPos, pos, anchor;
+	int32_t orbitRadius, radius;
+	int phase; // 512 in a rotation
+} sentry_t;
 
 typedef struct {
 	vector_t pos, vel, anchor;
@@ -52,7 +58,11 @@ void drawAsteroid(GravitySource* asteroid, const uint8_t* background);
 
 void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const uint8_t* background, uint8_t playerHit);
 
-void drawSentry(GravitySource* sentry, const uint8_t* background);
+void updateSentryPos(sentry_t* sentry, uint32_t frameCount);
+
+void drawSentry(sentry_t* sentry, uint32_t frameCount, const uint8_t* background);
+
+void drawPowerup(powerup* powerup, uint32_t frameCount, const uint8_t* background);
 
 //----------------------------------LED-----------------------------------------
 void setLEDToIndicateHealth(uint8_t livesLeft);
