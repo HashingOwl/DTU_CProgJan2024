@@ -150,16 +150,6 @@ int main(void)
 	drawScore(bufferLCD, readHighscore(),1);
 	addLivesBuffer(bufferLCD,3);
 	drawLCD(bufferLCD);
-	for (uint32_t i= 0;i<10000000;i++);
-	addLivesBuffer(bufferLCD,2);
-	drawLCD(bufferLCD);
-	for (uint32_t i= 0;i<10000000;i++);
-	addLivesBuffer(bufferLCD,1);
-	drawLCD(bufferLCD);
-	for (uint32_t i= 0;i<10000000;i++);
-	addLivesBuffer(bufferLCD,0);
-	drawLCD(bufferLCD);
-	for (uint32_t i= 0;i<10000000;i++);
 
 	//MAIN LOOP
 	while(1){
