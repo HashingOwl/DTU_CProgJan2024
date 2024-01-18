@@ -36,6 +36,8 @@
 //Set true by interrupt when it is time to make a new frame
 volatile uint8_t updateFrame = 0;
 
+//Set true when you need to clean up visuals after returning from boss screen which is on an interrupt so it need to be global.
+volatile uint8_t bossScreenReturnFlag = 0;
 // Used for debugging
 long int debug1 = 0;
 long int debug2 = 0;
@@ -43,7 +45,7 @@ long int debug2 = 0;
 int main(void)
 {
 	//----------GAME CONTROL---------
-	uint32_t gameState = PLAYING;
+	uint32_t gameState = MENU;
 	uint32_t frameCount = 0; // Used in sprite animations
 
 	uint8_t aliensLeftStart = 3; //Max number of aliens to die before game over
@@ -109,14 +111,14 @@ int main(void)
 
 	//----------CONSOLE AND GRAPHICS--------------
 	uint8_t backgroundContamination[P_WIDTH * P_HEIGHT / 8] = {};
-	const uint8_t* currentBackground = BG_Stratosphere_2; // Not actually a constant, it can be changed in software. It's a pointer to a constant.
+	const uint8_t* currentBackground = MainMenuBG; // Not actually a constant, it can be changed in software. It's a pointer to a constant.
 
 	//----------INITIALISATION OF HARD- AND SOFTWARE----------
 	// Output
 	uart_init(1000000);
 	initLED();
 	setLED(BLUE);
-	//initLCD();
+	lcd_init();
 
 	//Input
 	initAnalogJoystick();
@@ -132,6 +134,8 @@ int main(void)
 	//Miscenlaneous
 	//initBossScreen();
 	resetGrid(backgroundContamination);
+	drawBackground(currentBackground);
+	gameState = MENU;
 
 	if(gameState == PLAYING)
 		initGame(currentBackground, asteroids, numAsteroids, livesLeft);
@@ -390,6 +394,13 @@ int main(void)
 					buttonLift = 1;
 				};
 			}
+			if (bossScreenReturnFlag){
+				bossScreenReturnFlag=0;
+				drawBackground(currentBackground);
+				if (gameState == PLAYING) {
+					initGame(currentBackground, asteroids, numAsteroids, livesLeft);
+				}
+			}
 		}
 	}
 }
@@ -579,6 +590,7 @@ void EXTI4_IRQHandler(void) {
 	//Reenters prev state
 	TIM15->DIER |= 0x0001;
 	changeMusic(0);
+	bossScreenReturnFlag = 1;
 	EXTI_ClearFlag(EXTI_Line4);
 	EXTI_ClearITPendingBit(EXTI_Line4);
 }
