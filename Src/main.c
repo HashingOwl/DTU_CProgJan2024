@@ -130,7 +130,7 @@ int main(void)
 	//initBossScreen();
 	resetGrid(backgroundContamination);
 
-	if(gameState = PLAYING)
+	if(gameState == PLAYING)
 		initGame(currentBackground, asteroids, numAsteroids, livesLeft);
 
 
