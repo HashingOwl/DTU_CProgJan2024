@@ -11,6 +11,7 @@
 #include "GraphicData.h"
 #include "main.h"
 #include "Highscore.h"
+#include "lcd.h"
 // Game states
 #define MENU 1
 #define PLAYING 2
@@ -118,8 +119,14 @@ int main(void)
 	uart_init(1000000);
 	initLED();
 	setLED(BLUE);
+	//LCD screen
 	lcd_init();
+	uint8_t bufferLCD[512];
+	clearLCDBuffer(bufferLCD);
 
+	drawScore(bufferLCD, 152);
+	drawLCD(bufferLCD);
+	//while(1);
 	//Input
 	initAnalogJoystick();
 	initDigitalJoystick(); // While using mini joystick as substitute for proper joystick

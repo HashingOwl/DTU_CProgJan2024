@@ -7,5 +7,5 @@ void initLCD(void);
 void clearLCDBuffer(uint8_t buffer[]);
 void drawLCD(uint8_t buffer[]);
 void addLCDbuffer(uint8_t buffer[],const uint8_t spirteData[], uint8_t spirteWidth, uint8_t spriteHeight, uint8_t x, uint8_t y);
-
+void drawScore(char *slice, uint32_t score);
 #endif /* LCD_H_ */

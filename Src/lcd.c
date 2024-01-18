@@ -1,7 +1,7 @@
 #include "stm32f30x_conf.h" // STM32 config
 #include "30010_io.h" 		// Input/output library for this course
 #include <string.h>
-
+#include "Highscore.h"
 const char character_data[95][5] = {
   {0x00, 0x00, 0x00, 0x00, 0x00},
   {0x00, 0x5F, 0x5F, 0x00, 0x00},
@@ -110,12 +110,34 @@ void lcd_write_string(char *slice,char line[]) {
 	}
 }
 
+void lcd_write_letter(char *slice,char letter) {
+	for (uint8_t j= 0; j< 5; j++) {
+		(*(slice+j)) = character_data[letter-0x20][j];
+	}
+}
+
 void initLCD(void) {
 	lcd_init();
 }
 
 void clearLCDBuffer(uint8_t buffer[]) {
 	memset(buffer,0,512);
+}
+
+void drawScore(char *slice, uint32_t score){
+	uint8_t digit[3] = {};
+	saveHighscore(score);
+	lcd_write_string(slice,"Score ");
+
+	for (int8_t i = 0; i<3;i++) {
+		digit[i] = score % 10;
+		score -= digit[i];
+		score /= 10;
+	}
+	for (int8_t i = 2; i>=0;i--) {
+		lcd_write_letter(slice+i*5+30,digit[i]+48);
+	}
+
 }
 
 void drawLCD(uint8_t buffer[]) {
