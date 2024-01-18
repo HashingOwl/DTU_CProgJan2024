@@ -76,11 +76,14 @@ int main(void)
 	};
 
 	//----------ENEMIES--------------
-	vector_t enemies[2] = {
-			{70 << FIX, 100 << FIX},
-			{130 << FIX, 100 << FIX},
+	// Sentries
+	int numSentries = 2;
+	sentry_t sentries[2] = {
+			{.orbitPos = {U_WIDTH/2, U_HEIGHT/2}, 	.orbitRadius = 40 << FIX, 	.phase = 0, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
+			{.orbitPos = {U_WIDTH/2, U_HEIGHT/2}, 	.orbitRadius = 40 << FIX, 	.phase = 512, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
 	};
-	uint8_t numOfEnemies = 2;
+	for (int i = 0; i < numSentries; i++) { updateSentryPos(&sentries[i], 0); }
+
 	int16_t enemyShootResetValue = 20 * 5; // 20 * seconds between shoot
 	int16_t enemyShootCountdown = enemyShootResetValue;
 
@@ -273,10 +276,26 @@ int main(void)
 				}
 
 				// --------------------------BULLETS AND ENEMIES--------------------------------
+				// Update sentry positions
+				for (int i = 0; i < numSentries; i++) {
+					updateSentryPos(&sentries[i], frameCount);
+				}
+
+				// Draw Sentries
+				for (int i = 0; i < numSentries; i++) {
+					//drawSentry(&sentries[i], frameCount, currentBackground);
+					cleanRect(backgroundContamination, (sentries[i].pos.x >> FIX) - sentries[i].anchor.x, (sentries[i].pos.y >> FIX) - sentries[i].anchor.y, 16, 10);
+				}
+
+				// Apply gravity to bullets
 				for(uint8_t b = 0; b < numBullets; b++){
 					applyGravity(bullets[b].pos, &bullets[b].vel, asteroids, numAsteroids);
 				}
+
+				// Update bullet position
 				bulletUpdatePosition(bullets, numBullets, asteroids, numAsteroids);
+
+				// Check and handle bullet collision with player
 				if(bulletHitPlayer(&ship.pos, bullets, numBullets)){
 					livesLeft--;
 					playerHit = 25;
@@ -291,6 +310,8 @@ int main(void)
 					}
 					setLEDToIndicateHealth(livesLeft);
 				}
+
+				// Draw bullets
 				drawAllBullets(bullets, numBullets, frameCount, currentBackground);
 
 				// Clean Bullets
@@ -300,8 +321,9 @@ int main(void)
 					}
 				}
 
+				// Generate bullets
 				if(!enemyShootCountdown){
-					generateBullets(bullets, numBullets, enemies, numOfEnemies, &ship.pos, bulletSpeed);
+					generateBullets(bullets, numBullets, sentries, numSentries, &ship.pos, bulletSpeed);
 					enemyShootCountdown = enemyShootResetValue;
 				}
 
@@ -342,6 +364,10 @@ int main(void)
 				//------------Contaminate-for-next-frame--------------------
 				// Player
 				contaminateRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
+				// Contaminate Sentries
+				for (int i = 0; i < numSentries; i++) {
+					contaminateRect(backgroundContamination, (sentries[i].pos.x >> FIX) - sentries[i].anchor.x, (sentries[i].pos.y >> FIX) - sentries[i].anchor.y, 16, 10);
+				}
 				// Bullet
 				for (int i = 0; i < numBullets; i++) {
 					if (bullets[i].isActive) {
@@ -442,15 +468,15 @@ void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount,
 		}
 	}
 }
-void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[], uint8_t numOfEnemies, vector_t *playerPos, uint16_t bulletSpeed){
+void generateBullets(bullet bullets[], uint8_t numOfBullets, sentry_t* enemies, uint8_t numOfEnemies, vector_t *playerPos, uint16_t bulletSpeed){
 	for(uint8_t i = 0; i < numOfEnemies; i++){
 		if(!bullets[i].isActive){
 			bullets[i].isActive = 1;
-			bullets[i].pos = enemies[i];
+			bullets[i].pos = enemies[i].pos;
 			bullets[i].radius = 2 << FIX;
 			bullets[i].anchor.x = 2;
 			bullets[i].anchor.y = 2;
-			vector_t direction = subtractVectors(playerPos, &enemies[i]);
+			vector_t direction = subtractVectors(playerPos, &(enemies[i].pos));
 			direction = normalizeFIXVector(&direction);
 			bullets[i].vel = multFIXVector(&direction, bulletSpeed);
 		}

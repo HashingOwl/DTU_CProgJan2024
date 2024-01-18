@@ -44,7 +44,7 @@ void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource 
 char bulletHitPlayer(vector_t* playerPos, bullet bullets[], uint8_t numBullets);
 
 void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount, const uint8_t* background);
-void generateBullets(bullet bullets[], uint8_t numOfBullets, vector_t enemies[], uint8_t numOfEnemies, vector_t *playerPos, uint16_t bulletSpeed);
+void generateBullets(bullet bullets[], uint8_t numOfBullets, sentry_t* enemies, uint8_t numOfEnemies, vector_t *playerPos, uint16_t bulletSpeed);
 
 //----------------------------------POWERUPS-----------------------------------
 int16_t getPowerupCountdown();
