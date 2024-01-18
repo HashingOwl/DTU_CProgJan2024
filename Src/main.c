@@ -119,13 +119,8 @@ int main(void)
 	uart_init(1000000);
 	initLED();
 	setLED(BLUE);
-	//LCD screen
 	lcd_init();
-	uint8_t bufferLCD[512];
-	clearLCDBuffer(bufferLCD);
 
-	drawScore(bufferLCD, 152);
-	drawLCD(bufferLCD);
 	//while(1);
 	//Input
 	initAnalogJoystick();
@@ -147,7 +142,13 @@ int main(void)
 	if(gameState == PLAYING)
 		initGame(currentBackground, asteroids, numAsteroids, livesLeft);
 
-
+	//Init display
+	uint8_t bufferLCD[512];
+	clearLCDBuffer(bufferLCD);
+	//resetScore();
+	drawScore(bufferLCD, 1234,0);
+	drawScore(bufferLCD, readHighscore(),1);
+	drawLCD(bufferLCD);
 	//MAIN LOOP
 	while(1){
 		if(updateFrame){
@@ -265,7 +266,8 @@ int main(void)
 					setLEDToIndicateHealth(livesLeft);
 
 					//TODO ALBERT print new score
-
+					drawScore(bufferLCD, aliensThrough,0);
+					drawLCD(bufferLCD);
 					makeNewAlien(&ship, &playerStartPos, &currentAlien);
 				}
 
@@ -392,6 +394,7 @@ int main(void)
 				// Check for input, showing either boss_bakcground, or changing state to MENU or PLAYING
 				if (readJoystickButtons() && buttonLift) {
 					//TODO tilføj at gemme score.
+					drawScore(bufferLCD,aliensThrough,0);
 					buttonLift = 0;
 					currentBackground = MainMenuBG;
 					drawBackground(currentBackground);

@@ -100,7 +100,7 @@ const char character_data[95][5] = {
   {0x08, 0x04, 0x08, 0x10, 0x08}
 };
 
-void lcd_write_string(char *slice,char line[]) {
+void lcd_write_string(uint8_t *slice,char line[]) {
 	uint16_t i = 0;
 	while ( line[i] != 0 && i<= 102){
 		for (uint8_t j= 0; j< 5; j++) {
@@ -110,7 +110,7 @@ void lcd_write_string(char *slice,char line[]) {
 	}
 }
 
-void lcd_write_letter(char *slice,char letter) {
+void lcd_write_letter(uint8_t *slice,char letter) {
 	for (uint8_t j= 0; j< 5; j++) {
 		(*(slice+j)) = character_data[letter-0x20][j];
 	}
@@ -123,20 +123,29 @@ void initLCD(void) {
 void clearLCDBuffer(uint8_t buffer[]) {
 	memset(buffer,0,512);
 }
+#define NDIGITS 4
+void drawScore(uint8_t *slice, uint32_t score, uint8_t isHighScoreFlag){
+	uint8_t digit[NDIGITS] = {};
+	if (!isHighScoreFlag) {
+		saveHighscore(score);
+		if (score > readHighscore()) {
+			drawScore(slice,score,1);
+		}
+		lcd_write_string(slice,"Score ");
+	}
+	else {
+		lcd_write_string(slice+128,"Highscore ");
+	}
 
-void drawScore(char *slice, uint32_t score){
-	uint8_t digit[3] = {};
-	saveHighscore(score);
-	lcd_write_string(slice,"Score ");
-
-	for (int8_t i = 0; i<3;i++) {
+	for (int8_t i = 0; i<NDIGITS;i++) {
 		digit[i] = score % 10;
 		score -= digit[i];
 		score /= 10;
 	}
-	for (int8_t i = 2; i>=0;i--) {
-		lcd_write_letter(slice+i*5+30,digit[i]+48);
+	for (int8_t i = 0; i < NDIGITS; i++) {
+		lcd_write_letter(slice+i*5+30+148*isHighScoreFlag,digit[NDIGITS-i-1]+48);
 	}
+
 
 }
 
