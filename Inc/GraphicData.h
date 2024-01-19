@@ -32,9 +32,11 @@ extern const uint8_t Bullet_3[1*2];
 //-----Asteroid-----
 extern const uint8_t Asteroid_1[5*10];
 
-//------Power-Up----
-extern const uint8_t Power_Up_1[3*7];
-extern const uint8_t Power_Up_2[3*7];
+//------Power-Ups----
+extern const uint8_t PU_Anti_Gravity[18];
+extern const uint8_t PU_Heart[18];
+extern const uint8_t PU_Speed[18];
+extern const uint8_t PU_Shield[18];
 
 //------Sentry------
 extern const uint8_t Sentry_1[5*4];
@@ -66,7 +68,6 @@ extern const uint8_t* Alien2_Anim[2];
 extern const uint8_t* Alien3_Anim[2];
 extern const uint8_t* Bullet_Anim[3];
 extern const uint8_t* Sentry_Anim[4];
-extern const uint8_t* Power_Up_Anim[2];
 
 //========================================BACKGROUNDS============================================
 extern const uint8_t BG_Stratosphere_1[128*64/4];

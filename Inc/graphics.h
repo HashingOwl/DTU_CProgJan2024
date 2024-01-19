@@ -34,11 +34,24 @@
 #define BROWN 3
 #define BLUE 4
 #define PURPLE 5
+#define CYAN 6
 #define GRAY 7
 #define YELLOW 11
 #define WHITE 15
 
 #define BACKGROUND_COLOR GRAY
+
+/*  Value      foreground     Value     foreground
+    ------------------------------------------------
+      0        Black            8       Dark Gray
+      1        Red              9       Light Red
+      2        Green           10       Light Green
+      3        Brown           11       Yellow
+      4        Blue            12       Light Blue
+      5        Purple          13       Light Purple
+      6        Cyan            14       Light Cyan
+      7        Light Gray      15       White
+*/
 
 void print_byte(uint8_t byte);
 void gotoxy(uint8_t x, uint8_t y);

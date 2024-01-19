@@ -684,7 +684,7 @@ void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameC
 			powerups[i].isActive = 1;
 			powerups[i].power = powerups[i].pos.x & 0b11; //Semi random method of choosing power
 			powerups[i].anchor.x = 6;
-			powerups[i].anchor.y = 7;
+			powerups[i].anchor.y = 6;
 			break;
 		}
 	}
@@ -692,8 +692,6 @@ void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameC
 
 //--------------------------------DRAWING FUNCITONS---------------------------------------------
 void updateSentryPos(sentry_t* sentry, uint32_t frameCount) {
-
-
 	int32_t offsetX = FIXMUL(cosi((frameCount<<2) + sentry->phase), sentry->orbitRadius);
 	int32_t offsetY = FIXMUL(sine((frameCount<<2) + sentry->phase), sentry->orbitRadius);
 
@@ -707,17 +705,26 @@ void updateSentryPos(sentry_t* sentry, uint32_t frameCount) {
 
 void drawPowerup(powerup* powerup, uint32_t frameCount, const uint8_t* background){
 	uint8_t color;
+	const uint8_t* spriteData;
 	switch (powerup->power){
 	case healthPU:
-		color = RED; break;
+		color = RED;
+		spriteData = PU_Heart;
+		break;
 	case invincibilityPU:
-		color = PURPLE; break;
+		color = PURPLE;
+		spriteData = PU_Shield;
+		break;
 	case speedPU:
-		color = BLUE; break;
+		color = YELLOW;
+		spriteData = PU_Speed;
+		break;
 	case gravityPU:
-		color = GREEN; break;
+		color = CYAN;
+		spriteData = PU_Anti_Gravity;
+		break;
 	}
-	drawSprite(background, Power_Up_Anim[frameCount/16 % 2], 3, 7, color, FIX_2_X(powerup), FIX_2_Y(powerup));
+	drawSprite(background, spriteData, 3, 6, color, FIX_2_X(powerup), FIX_2_Y(powerup));
 }
 
 void drawSentry(sentry_t* sentry, uint32_t frameCount, const uint8_t* background) {

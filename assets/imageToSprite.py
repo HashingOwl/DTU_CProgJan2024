@@ -4,7 +4,7 @@ from PIL import Image
 
 #imgName = "C:\\Users\\alber\\OneDrive\\Dokumenter\\GitHub\\DTU_CProgJan2024\\alien3_2.png"
  
-spriteName = "bossScreenBG"
+spriteName = "PU_Speed"
 imgName = os.path.dirname(os.path.abspath(__file__))+"\\"+spriteName+".png"
 image_file = Image.open(imgName)
 image_file = image_file.convert('1')
