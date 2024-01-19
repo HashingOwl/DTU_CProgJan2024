@@ -42,7 +42,7 @@ void changeMusic(uint8_t boss) {
 
 volatile uint32_t beepCount = 0;
 void playBeep(void) {
-	beepCount = 1000;
+	beepCount = 3000;
 	TIM16->ARR >>= 2;
 }
 
