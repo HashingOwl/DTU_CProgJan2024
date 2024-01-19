@@ -23,6 +23,7 @@ void TIM2_IRQHandler(void);
 void TIM1_UP_TIM16_IRQHandler(void);
 void disableMusic();
 void ensableMusic();
+void playBeep(void);
 void changeMusic(uint8_t boss);
 //old system
 /*

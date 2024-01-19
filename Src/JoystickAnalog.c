@@ -104,11 +104,11 @@ void readAnalogJoystick(uint32_t* x, uint32_t* y) {
 	adcVal = JoystickXADC();
 
 	//Create dead-zone and center
-	if (1400>adcVal && adcVal>1050) {
+	if (2100>adcVal && adcVal>1800) {
 		adcVal = 2048;
 	}
 	adcVal -= 2048;
-	adcVal >>= 6;
+	adcVal >>= 4;
 	(*x) = adcVal;
 
 	adcVal = JoystickYADC();
@@ -118,7 +118,7 @@ void readAnalogJoystick(uint32_t* x, uint32_t* y) {
 		adcVal = 2048;
 	}
 	adcVal -= 2048;
-	adcVal >>= 6;
+	adcVal >>= 4;
 	(*y) = adcVal;
 
 }

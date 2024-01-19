@@ -12,6 +12,8 @@
 #include "main.h"
 #include "Highscore.h"
 #include "lcd.h"
+#include "bossScreen.h"
+
 // Game states
 #define MENU 1
 #define PLAYING 2
@@ -43,8 +45,7 @@
 //Set true by interrupt when it is time to make a new frame
 volatile uint8_t updateFrame = 0;
 
-//Set true when you need to clean up visuals after returning from boss screen which is on an interrupt so it need to be global.
-volatile uint8_t bossScreenReturnFlag = 0;
+
 // Used for debugging
 long int debug1 = 0;
 long int debug2 = 0;
@@ -52,7 +53,7 @@ long int debug2 = 0;
 int main(void)
 {
 	//----------GAME CONTROL---------
-	uint32_t gameState = PLAYING;
+	uint32_t gameState = MENU;
 	uint32_t frameCount = 0; // Used in sprite animations
 
 	//ALIENS LEFT THROUGHOUT GAME
@@ -138,11 +139,12 @@ int main(void)
 
 	//Music
 	soundInit();
-	changeMusic(0);
-	initTimer15(639, 10000);
+	//changeMusic(0);
+
+	initTimer15(639, 5000);
 
 	//Miscenlaneous
-	//initBossScreen();
+	initBossScreen();
 	resetGrid(backgroundContamination);
 
 
@@ -162,6 +164,20 @@ int main(void)
 	drawScore(bufferLCD, readHighscore(),1);
 	addLivesBuffer(bufferLCD,3);
 	drawLCD(bufferLCD);
+
+	void resetGameVals(){
+		aliensLeft = aliensLeftStart;
+		aliensThrough = 0;
+		ship.pos = playerStartPos;
+		ship.vel.x = 0;
+		ship.vel.y = 0;
+		livesLeft = maxLives;
+		currentAlien = 1;
+		enemyShootCountdown = enemyShootResetValue;
+		for (int i = 0; i < numSentries; i++) { sentries[i].orbitPos.x=U_WIDTH/2; sentries[i].orbitPos.y= U_HEIGHT/2;  sentries[i].phase = 512*i; }
+		for (int i= 0; i < numBullets; i++) {bullets[i].isActive = 0;}
+		for (int i= 0; i < numPowerups; i++) {powerups[i].isActive = 0;}
+	}
 
 	//MAIN LOOP
 	while(1){
@@ -202,10 +218,11 @@ int main(void)
 				}
 				if (readJoystickButtons() && buttonLift) {
 					buttonLift = 0;
+					playBeep();
 					switch(currSelectionMainMenu) {
 						//Goto game
 						case 0:
-							//TODO add reset here.
+							resetGameVals();
 							currentBackground = BG_Stratosphere_2;
 							gameState = PLAYING;
 							initGame(currentBackground, asteroids, numAsteroids, livesLeft);
@@ -213,7 +230,7 @@ int main(void)
 						//Goto help screen
 						case 1:
 							currentBackground = HelpScreen;
-							drawBackground(currentBackground);//TODO tilføj den rigtige skærm for help
+							drawBackground(currentBackground);
 							gameState = HELP;
 							break;
 						//Dis/en-able sound
@@ -229,11 +246,6 @@ int main(void)
 				break;
 //=========================================PLAYING======================================================
 			case PLAYING:
-				//If button to enter main menu is hit go to main menu
-				if (readJoystickButtons() & 0) {
-					currentBackground=MainMenuBG;
-					drawBackground(currentBackground);
-				}
 
 				if(playerHit > 0)
 					playerHit--;
@@ -241,13 +253,14 @@ int main(void)
 				//-------------------INPUT----------------------------------
 				//Getting input from joystick. Passed as reference
 				vector_t input = {0, 0};
-				//readJoystickAnalog(&input.x, &input.y);
+				readAnalogJoystick(&input.x, &input.y);
 				// Temporary when testing from a board without proper joystick. Please outcomment it instead of deleting.
+				/*
 				joyVal = readDigitalJoystick();
 				input.y -= ((joyVal & 1) != 0) * 160;
 				input.y += ((joyVal & 2) != 0) * 160;
 				input.x -= ((joyVal & 4) != 0) * 160;
-				input.x += ((joyVal & 8) != 0) * 160;
+				input.x += ((joyVal & 8) != 0) * 160;*/
 
 				//------------------PLAYER PHYSICS---------------------------------
 				//Update velocity based on input and Powerup
@@ -277,6 +290,7 @@ int main(void)
 				//WIN CONDITION - Check if player hits bottom.
 				if(ship.pos.y > U_WIDTH - ship.radius - BORDER_PAD){
 					if(ship.pos.x > U_WIDTH - ship.radius - 0x2000){ //Win condition
+						playBeep();
 						bulletSpeed += bulletSpeedIncrease;
 						bulletRespawnRate = FIXMUL(bulletRespawnRate, 0xA0);
 						livesLeft = maxLives;
@@ -335,6 +349,7 @@ int main(void)
 					char hitBullet = bulletHitPlayer(&ship.pos, bullets, numBullets);
 					char hitSentry = sentryHitPlayer(&ship, sentries, numSentries);
 					if(hitBullet || hitSentry){
+						playBeep();
 						if(livesLeft == 1 || hitSentry){ //Alien dies
 							aliensLeft--;
 							livesLeft = maxLives;
@@ -398,6 +413,7 @@ int main(void)
 				for(uint8_t p = 0; p < numPowerups; p++){
 					vector_t anchorPos = {ship.pos.x - 0x400, ship.pos.y - 0x400};
 					if(circleCollision(&powerups[p].pos, &anchorPos, 0x7500)){
+						playBeep();
 						powerups[p].isActive = 0;
 						contaminateRect(backgroundContamination, FIX_2_XStat(powerups[p]), FIX_2_YStat(powerups[p]), 3*4, 7*2);
 
@@ -432,8 +448,8 @@ int main(void)
 				drawCleanBackground(currentBackground, backgroundContamination);
 				resetGrid(backgroundContamination);
 
-				gotoxy(0,0); printf("%4ld", debug1);
-				gotoxy(0,1); printf("%4ld", debug2);
+				//gotoxy(0,0); printf("%4ld", debug1);
+				//gotoxy(0,1); printf("%4ld", debug2);
 
 				//------------Contaminate-for-next-frame--------------------
 				// Player
@@ -448,6 +464,14 @@ int main(void)
 						contaminateRect(backgroundContamination, (bullets[i].pos.x >> FIX) - bullets[i].anchor.x, (bullets[i].pos.y >> FIX) - bullets[i].anchor.y, 4, 4);
 					}
 				}
+				if (readJoystickButtons() && buttonLift) {
+						playBeep();
+						buttonLift = 0;
+						gameState = MENU;
+				}
+				else if (readJoystickButtons() == 0){
+					buttonLift = 1;
+				}
 				if (gameState == MENU) {
 					currentBackground = MainMenuBG;
 					drawBackground(currentBackground);
@@ -457,7 +481,7 @@ int main(void)
 			case HELP:
 				// Check for input, showing either boss_bakcground, or changing state to MENU or PLAYING
 				if (readJoystickButtons() && buttonLift) {
-					//TODO tilføj at gemme score.
+					playBeep();
 					drawScore(bufferLCD,aliensThrough,0);
 					buttonLift = 0;
 					currentBackground = MainMenuBG;
@@ -702,38 +726,6 @@ void TIM1_BRK_TIM15_IRQHandler(void) {
 	resetTimer15();
 }
 
-//This interrupt handles BossScreen.
-void EXTI4_IRQHandler(void) {
-	//Pauses everything
-	TIM15->DIER &= ~(0x0001);
-	changeMusic(1);
-	drawBackground(bossScreenBG);
-	while((GPIOA->IDR)&(1<<4));
-	while(!((GPIOA->IDR)&(1<<4)));
-	for (uint32_t i = 0; i<1000000;i++);
-	//Reenters prev state
-	TIM15->DIER |= 0x0001;
-	changeMusic(0);
-	bossScreenReturnFlag = 1;
-	EXTI_ClearFlag(EXTI_Line4);
-	EXTI_ClearITPendingBit(EXTI_Line4);
-}
 
-void initBossScreen(void) {
-	RCC->AHBENR |= RCC_AHBPeriph_GPIOA;
-	GPIOA->MODER &= ~(0x00000003 << (4 * 2));
-	GPIOA->PUPDR &= ~(0x00000002 << (4 * 2));
-	GPIOA->PUPDR |= (0x00000002 << (4 * 2));
-	RCC->APB2ENR |= (1<<0);
-	SYSCFG->EXTICR[1] = 0;
-
-	EXTI->IMR 		|= (1 << 4);
-	//EXTI->EMR  		|= (1 << 4);
-	EXTI->RTSR      |= (1 << 4);
-
-	NVIC_SetPriority(EXTI4_IRQn, 1);
-	NVIC_EnableIRQ(EXTI4_IRQn);
-
-}
 
 
