@@ -437,6 +437,11 @@ int main(void)
 								addLivesBuffer(bufferLCD, aliensLeft);
 								drawLCD(bufferLCD);
 							}
+							else {
+								aliensLeft = aliensLeftStart;
+								addLivesBuffer(bufferLCD, aliensLeft);
+								drawLCD(bufferLCD);
+							}
 							setLEDToIndicateHealth(livesLeft);
 						break;
 						case invincibilityPU:
