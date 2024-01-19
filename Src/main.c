@@ -13,18 +13,10 @@
 #include "Highscore.h"
 #include "lcd.h"
 #include "bossScreen.h"
+#include "MapData.h"
 
 //Baudrate
 #define BAUDRATE 256000
-
-// Game states
-#define MENU 1
-#define PLAYING 2
-#define HELP 3
-
-#define BORDER_PAD 	(2 << FIX)
-#define U_WIDTH 	(P_WIDTH << FIX)
-#define U_HEIGHT 	(P_HEIGHT * 2 << FIX)
 
 // Get the pixel coordinate from fixedPoint for graphic object. Arrow for struct pointers and Dots for structs.
 #define FIX2X_A(a) ((a->pos.x >> FIX) - a->anchor.x)
@@ -45,6 +37,21 @@ volatile uint8_t updateFrame = 0;
 long int debug1 = 0;
 long int debug2 = 0;
 
+void configureMap(const map_t* map, uint8_t* numAsteroids, GravitySource asteroids[], uint8_t* numSentries, sentry_t sentries[]) {
+	*numAsteroids = map->numAsteroids;
+	*numSentries = map->numSentries;
+	// Update relevant parts of configurations
+	for (uint8_t i = 0; i < *numAsteroids; i++)
+		asteroids[i] = map->asteroidConfiguration[i];
+	for (uint8_t i = 0; i < *numSentries; i++)
+		sentries[i] = map->sentryConfiguration[i];
+	// Initialize sentries position, to avoid unforeseen bugs
+	for (uint8_t i = 0; i < *numSentries; i++) { updateSentryPos(&sentries[i], 0); }
+	// Draw asteroids
+}
+
+
+
 int main(void)
 {
 	//----------GAME CONTROL---------
@@ -54,8 +61,8 @@ int main(void)
 	//ALIENS LEFT THROUGHOUT GAME
 	uint8_t aliensLeftStart = 3; //Max number of aliens to die before game over
 	uint8_t aliensLeft = aliensLeftStart;
-	uint8_t aliensThrough = 0; //score
-
+	uint16_t aliensThrough = 0; //score
+	uint8_t currentMap = 0;
 	//----------PLAYER ALIEN---------
 	vector_t playerStartPos = {10 << FIX, 10<<FIX};
 	GravityTarget ship = {
@@ -71,34 +78,20 @@ int main(void)
 
 
 	//----------ASTEROIDS-------------
-	uint8_t numAsteroids = 7;
-	GravitySource asteroids[7] = {
-			{.pos = {U_WIDTH/2, U_HEIGHT/2}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
-			{.pos = {40 << FIX, 50 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
-			{.pos = {40 << FIX, 150 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
-			{.pos = {160 << FIX, 50 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
-			{.pos = {160 << FIX, 150 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
-			{.pos = {100 << FIX, 30 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
-			{.pos = {100 << FIX, 170 << FIX}, .anchor = {10, 10}, .radius = 12 << FIX, .mass = 80 << 24},
-	};
+	uint8_t numAsteroids;
+	GravitySource asteroids[8] = {}; // Filled by the configureMap() function
 
 	//----------ENEMIES--------------
 	// Sentries
-	uint8_t numSentries = 4;
-	sentry_t sentries[4] = {
-			{.orbitPos = {U_WIDTH/2, U_HEIGHT/2}, 	.orbitRadius = 35 << FIX, 	.phase = 0, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
-			{.orbitPos = {U_WIDTH/2, U_HEIGHT/2}, 	.orbitRadius = 35 << FIX, 	.phase = 512, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
-			{.orbitPos = {160 << FIX, 50 << FIX}, 	.orbitRadius = 25 << FIX, 	.phase = 512, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
-			{.orbitPos = {40 << FIX, 150 << FIX}, 	.orbitRadius = 25 << FIX, 	.phase = 512, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
-	};
-	for (uint8_t i = 0; i < numSentries; i++) { updateSentryPos(&sentries[i], 0); }
+	uint8_t numSentries;
+	sentry_t sentries[4] = {}; // Filled by the configureMap() function
 
 	int16_t enemyShootResetValue = 20 * 5; // 20 * seconds between shoot
 	int16_t enemyShootCountdown = enemyShootResetValue;
 
 	//----------BULLETS--------------
 	uint8_t numBullets = 20;
-	bullet bullets[20] = {};
+	bullet_t bullets[20] = {};
 	uint16_t bulletSpeed = 0x500;
 	uint16_t bulletSpeedIncrease = 0x60;
 	uint32_t bulletRespawnRate = 0x100;
@@ -106,7 +99,7 @@ int main(void)
 	//----------POWERUPS--------------
 	char RNGSeedSet = 0;
 	uint16_t powerupCountdown = getPowerupCountdown();
-	powerup powerups[2] = {};
+	powerup_t powerups[2] = {};
 	uint8_t numPowerups = 2;
 	uint8_t powerupEffects[4] = {}; // Boolean values for what indecies of powerup are active.
 
@@ -118,7 +111,7 @@ int main(void)
 
 	//----------CONSOLE AND GRAPHICS--------------
 	uint8_t backgroundContamination[P_WIDTH * P_HEIGHT / 8] = {};
-	const uint8_t* currentBackground; // Not actually a constant, it can be changed in software. It's a pointer to a constant.
+	const uint8_t* currentBackground; // Not actually a constant, it's a pointer to a constant.
 
 	//----------INITIALISATION OF HARD- AND SOFTWARE----------
 	// Output
@@ -141,7 +134,6 @@ int main(void)
 	//Miscenlaneous
 	initBossScreen();
 	resetGrid(backgroundContamination);
-
 
 	if(gameState == PLAYING){
 		currentBackground = BG_Stratosphere_2;
@@ -169,11 +161,11 @@ int main(void)
 		livesLeft = maxLives;
 		currentAlien = 1;
 		enemyShootCountdown = enemyShootResetValue;
-		for (int i = 0; i < 2; i++) { sentries[i].orbitPos.x=U_WIDTH/2; sentries[i].orbitPos.y= U_HEIGHT/2;sentries[i].phase= 512*i;}
-		sentries[2].orbitPos.x=160 << FIX; sentries[2].orbitPos.y= 50 << FIX; sentries[2].phase= 512;
-		sentries[3].orbitPos.x=40 << FIX; sentries[3].orbitPos.y= 150 << FIX; sentries[3].phase= 512;
 		for (int i= 0; i < numBullets; i++) {bullets[i].isActive = 0;}
 		for (int i= 0; i < numPowerups; i++) {powerups[i].isActive = 0;}
+		// Resets map
+		currentMap = 0;
+		configureMap(Maps[currentMap], &numAsteroids, asteroids, &numSentries, sentries);
 	}
 
 	//MAIN LOOP
@@ -311,6 +303,28 @@ int main(void)
 						drawScore(bufferLCD, aliensThrough, 0);
 						drawLCD(bufferLCD);
 						makeNewAlien(&ship, &playerStartPos, &currentAlien);
+
+						if (aliensThrough % 3 == 0) {
+							drawBackground(currentBackground);
+							currentMap = (currentMap+1)%3;
+							configureMap(Maps[currentMap], &numAsteroids, asteroids, &numSentries, sentries);
+							// Draw asteroids
+							for (int i = 0; i < numAsteroids; i++) {
+								drawAsteroid(&asteroids[i], currentBackground);
+								// Delay - without this it doesn't work for mysterious reasons.
+								for (uint32_t i = 0; i < 360000; i++);
+							}
+							// Deactivate bullets
+							for (uint8_t i = 0; i < numBullets; i++) {
+								bullets[i].isActive = 0;
+							}
+							// Deactive powerups
+							for (uint8_t i = 0; i < numPowerups; i++) {
+								powerups[i].isActive = 0;
+							}
+							resetGrid(backgroundContamination);
+							continue;
+						}
 					}else{
 						ship.pos.y = U_WIDTH - ship.radius - BORDER_PAD;
 						ship.vel.y /= -4;
@@ -526,14 +540,11 @@ int main(void)
 //----------------------------------GAME CONTROL----------------------------
 void initGame(const uint8_t* currentBackground, GravitySource asteroids[], uint8_t numAsteroids, uint8_t livesLeft){
 	drawBackground(currentBackground);
-	setLEDToIndicateHealth(livesLeft);
-
-	//Draw asteroids
-	for (int i = 0; i < numAsteroids; i++) {
+	//Draw astroids
+	for (int i = 0; i< numAsteroids; i++) {
 		drawAsteroid(&asteroids[i], currentBackground);
-		// Delay - without this it doesn't work for mysterious reasons.
-		for (uint32_t i = 0; i < 360000; i++);
 	}
+	setLEDToIndicateHealth(livesLeft);
 }
 
 void shipUpdatePosition(GravityTarget *ship){
@@ -551,7 +562,7 @@ void makeNewAlien(GravityTarget *ship, vector_t *startPos, uint8_t* currentAlien
 }
 
 //-----------------------------------BULLETS------------------------------------------------------
-void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource asteroids[], uint8_t numAsteroids){
+void bulletUpdatePosition(bullet_t bullets[], uint8_t numOfBullets, GravitySource asteroids[], uint8_t numAsteroids){
 	for(uint8_t i = 0; i < numOfBullets; i++){
 		if(bullets[i].isActive){
 			bullets[i].pos.x += bullets[i].vel.x;
@@ -576,7 +587,7 @@ void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource 
 	}
 }
 
-char bulletHitPlayer(vector_t* playerPos, bullet bullets[], uint8_t numBullets){
+char bulletHitPlayer(vector_t* playerPos, bullet_t bullets[], uint8_t numBullets){
 	vector_t anchorPos = *playerPos;
 	anchorPos.x -= 0x600;
 	anchorPos.y -= 0x400;
@@ -605,14 +616,14 @@ char sentryHitPlayer(GravityTarget* ship, sentry_t sentries[], uint8_t numSentri
 	return 0;
 }
 
-void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount, const uint8_t* background){
+void drawAllBullets(bullet_t bullets[], uint8_t numOfBullets, uint32_t frameCount, const uint8_t* background){
 	for(uint8_t i = 0; i < numOfBullets; i++){
 		if(bullets[i].isActive){
 			drawBullet(&bullets[i], frameCount, background);
 		}
 	}
 }
-void generateBullets(bullet bullets[], uint8_t numOfBullets, sentry_t* enemies, uint8_t numOfEnemies, vector_t *playerPos, uint16_t bulletSpeed){
+void generateBullets(bullet_t bullets[], uint8_t numOfBullets, sentry_t* enemies, uint8_t numOfEnemies, vector_t *playerPos, uint16_t bulletSpeed){
 	for(uint8_t i = 0; i < numOfEnemies; i++){
 		if(!bullets[i].isActive){
 			bullets[i].isActive = 1;
@@ -640,7 +651,7 @@ int16_t getPowerupCountdown(){
 		time = 30;
 	return time;
 }
-void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameCount, const uint8_t currentbackground[], GravitySource asteroids[], uint8_t numAsteroids){
+void generateNewPowerup(powerup_t powerups[], uint8_t numPowerups, uint16_t frameCount, const uint8_t currentbackground[], GravitySource asteroids[], uint8_t numAsteroids){
 	void randomVector(vector_t* pos){
 		pos->x = FIXMUL(rand16bit(), 0x160) + 0x600;
 		pos->y = FIXMUL(rand16bit(), 0x160) + 0x600;
@@ -686,7 +697,7 @@ void updateSentryPos(sentry_t* sentry, uint32_t frameCount) {
 }
 
 
-void drawPowerup(powerup* powerup, uint32_t frameCount, const uint8_t* background){
+void drawPowerup(powerup_t* powerup, uint32_t frameCount, const uint8_t* background){
 	uint8_t color;
 	const uint8_t* spriteData;
 	switch (powerup->power){
@@ -714,7 +725,7 @@ void drawSentry(sentry_t* sentry, uint32_t frameCount, const uint8_t* background
 	drawSprite(background, Sentry_Anim[frameCount/8 % 4], 4, 5, RED, FIX2X_A(sentry), FIX2Y_A(sentry));
 }
 
-void drawBullet(bullet* bullet, uint32_t frameCount, const uint8_t* background){
+void drawBullet(bullet_t* bullet, uint32_t frameCount, const uint8_t* background){
 	drawSprite(background, Bullet_Anim[frameCount/2 % 3], 1, 2, WHITE, FIX2X_A(bullet), FIX2Y_A(bullet));
 }
 
