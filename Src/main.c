@@ -16,21 +16,21 @@
 
 //Baudrate
 #define BAUDRATE 256000
+
 // Game states
 #define MENU 1
 #define PLAYING 2
 #define HELP 3
 
-// Fixed point constants
 #define BORDER_PAD 	(2 << FIX)
 #define U_WIDTH 	(P_WIDTH << FIX)
 #define U_HEIGHT 	(P_HEIGHT * 2 << FIX)
 
-#define FIX_2_X(a) ((a->pos.x >> FIX) - a->anchor.x)
-#define FIX_2_Y(a) ((a->pos.y >> FIX) - a->anchor.y)
-
-#define FIX_2_XStat(a) ((a.pos.x >> FIX) - a.anchor.x)
-#define FIX_2_YStat(a) ((a.pos.y >> FIX) - a.anchor.y)
+// Get the pixel coordinate from fixedPoint for graphic object. Arrow for struct pointers and Dots for structs.
+#define FIX2X_A(a) ((a->pos.x >> FIX) - a->anchor.x)
+#define FIX2Y_A(a) ((a->pos.y >> FIX) - a->anchor.y)
+#define FIX2X_D(a) ((a.pos.x >> FIX) - a.anchor.x)
+#define FIX2Y_D(a) ((a.pos.y >> FIX) - a.anchor.y)
 
 #define healthPU 0
 #define invincibilityPU 1
@@ -344,7 +344,7 @@ int main(void)
 				// Draw Sentries
 				for (int i = 0; i < numSentries; i++) {
 					drawSentry(&sentries[i], frameCount, currentBackground);
-					cleanRect(backgroundContamination, (sentries[i].pos.x >> FIX) - sentries[i].anchor.x, (sentries[i].pos.y >> FIX) - sentries[i].anchor.y, 16, 10);
+					cleanRect(backgroundContamination, FIX2X_D(sentries[i]), FIX2Y_D(sentries[i]), 16, 10);
 				}
 
 				// Apply gravity to bullets
@@ -385,7 +385,7 @@ int main(void)
 				// Clean Bullets
 				for (int i = 0; i < numBullets; i++) {
 					if (bullets[i].isActive) {
-						cleanRect(backgroundContamination, (bullets[i].pos.x >> FIX) - bullets[i].anchor.x, (bullets[i].pos.y >> FIX) - bullets[i].anchor.y, 4, 4);
+						cleanRect(backgroundContamination, FIX2X_D(bullets[i]), FIX2Y_D(bullets[i]), 4, 4);
 					}
 				}
 
@@ -427,7 +427,7 @@ int main(void)
 					if(powerups[p].isActive && circleCollision(&powerups[p].pos, &anchorPos, 0x7500)){
 						playBeep();
 						powerups[p].isActive = 0;
-						contaminateRect(backgroundContamination, FIX_2_XStat(powerups[p]), FIX_2_YStat(powerups[p]), 3*4, 7*2);
+						contaminateRect(backgroundContamination, FIX2X_D(powerups[p]), FIX2Y_D(powerups[p]), 3*4, 7*2);
 
 						switch (powerups[p].power){
 						case healthPU:
@@ -459,7 +459,7 @@ int main(void)
 				//-------------------Drawing--------------------------------
 				// Player
 				drawAlien(&ship, currentAlien, powerupEffects, frameCount, currentBackground, playerHit);
-				cleanRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
+				cleanRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, ((currentAlien == 3) ? 8 : 12), 8);
 
 				// Clean Background
 				drawCleanBackground(currentBackground, backgroundContamination);
@@ -467,15 +467,15 @@ int main(void)
 
 				//------------Contaminate-for-next-frame--------------------
 				// Player
-				contaminateRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
+				contaminateRect(backgroundContamination, FIX2X_D(ship), FIX2Y_D(ship), ((currentAlien == 3) ? 8 : 12), 8);
 				// Contaminate Sentries
 				for (int i = 0; i < numSentries; i++) {
-					contaminateRect(backgroundContamination, (sentries[i].pos.x >> FIX) - sentries[i].anchor.x, (sentries[i].pos.y >> FIX) - sentries[i].anchor.y, 16, 10);
+					contaminateRect(backgroundContamination, FIX2X_D(sentries[i]), FIX2Y_D(sentries[i]), 16, 10);
 				}
 				// Bullet
 				for (int i = 0; i < numBullets; i++) {
 					if (bullets[i].isActive) {
-						contaminateRect(backgroundContamination, (bullets[i].pos.x >> FIX) - bullets[i].anchor.x, (bullets[i].pos.y >> FIX) - bullets[i].anchor.y, 4, 4);
+						contaminateRect(backgroundContamination, FIX2X_D(bullets[i]), FIX2Y_D(bullets[i]), 4, 4);
 					}
 				}
 				if (readJoystickButtons() && buttonLift) {
@@ -707,19 +707,19 @@ void drawPowerup(powerup* powerup, uint32_t frameCount, const uint8_t* backgroun
 		spriteData = PU_Anti_Gravity;
 		break;
 	}
-	drawSprite(background, spriteData, 3, 6, color, FIX_2_X(powerup), FIX_2_Y(powerup));
+	drawSprite(background, spriteData, 3, 6, color, FIX2X_A(powerup), FIX2Y_A(powerup));
 }
 
 void drawSentry(sentry_t* sentry, uint32_t frameCount, const uint8_t* background) {
-	drawSprite(background, Sentry_Anim[frameCount/8 % 4], 4, 5, RED, FIX_2_X(sentry), FIX_2_Y(sentry));
+	drawSprite(background, Sentry_Anim[frameCount/8 % 4], 4, 5, RED, FIX2X_A(sentry), FIX2Y_A(sentry));
 }
 
 void drawBullet(bullet* bullet, uint32_t frameCount, const uint8_t* background){
-	drawSprite(background, Bullet_Anim[frameCount/2 % 3], 1, 2, WHITE, FIX_2_X(bullet), FIX_2_Y(bullet));
+	drawSprite(background, Bullet_Anim[frameCount/2 % 3], 1, 2, WHITE, FIX2X_A(bullet), FIX2Y_A(bullet));
 }
 
 void drawAsteroid(GravitySource* asteroid, const uint8_t* background) {
-	drawSprite(background, Asteroid_1, 5, 10, BROWN, FIX_2_X(asteroid), FIX_2_Y(asteroid));
+	drawSprite(background, Asteroid_1, 5, 10, BROWN, FIX2X_A(asteroid), FIX2Y_A(asteroid));
 }
 
 void drawAlien(GravityTarget* alien, uint8_t alienNum, uint8_t* powerUpEffects, uint32_t frameCount, const uint8_t* background, uint8_t playerHit) {
@@ -746,7 +746,7 @@ void drawAlien(GravityTarget* alien, uint8_t alienNum, uint8_t* powerUpEffects, 
 		spriteData = Alien3_Anim[frameCount/8 % 2]; break;
 	}
 
-	drawSprite(background, spriteData, ((alienNum == 3) ? 2 : 3), 4, color, FIX_2_X(alien), FIX_2_Y(alien));
+	drawSprite(background, spriteData, ((alienNum == 3) ? 2 : 3), 4, color, FIX2X_A(alien), FIX2Y_A(alien));
 
 }
 
