@@ -161,7 +161,7 @@ int main(void)
 	//Init LCD-display
 	uint8_t bufferLCD[512];
 	clearLCDBuffer(bufferLCD);
-	//resetScore();
+
 	drawScore(bufferLCD, 0,0);
 	drawScore(bufferLCD, readHighscore(),1);
 	addLivesBuffer(bufferLCD,3);
