@@ -135,7 +135,7 @@ int main(void)
 
 	//Music
 	soundInit();
-	changeMusic(0);
+
 	initTimer15(49, 3600000);
 
 	//Miscenlaneous
@@ -437,7 +437,7 @@ int main(void)
 								addLivesBuffer(bufferLCD, aliensLeft);
 								drawLCD(bufferLCD);
 							}
-							else {
+							else { //Shouldn't be necesarry but seems to fix a bug
 								aliensLeft = aliensLeftStart;
 								addLivesBuffer(bufferLCD, aliensLeft);
 								drawLCD(bufferLCD);
