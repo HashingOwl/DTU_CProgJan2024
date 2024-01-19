@@ -40,7 +40,7 @@ void makeNewAlien(GravityTarget *ship, vector_t *startPos, uint8_t* currentAlien
 void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource asteroids[], uint8_t numAsteroids);
 
 char bulletHitPlayer(vector_t* playerPos, bullet bullets[], uint8_t numBullets);
-
+char sentryHitPlayer(GravityTarget* ship, sentry_t sentries[], uint8_t numSentries);
 void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount, const uint8_t* background);
 void generateBullets(bullet bullets[], uint8_t numOfBullets, sentry_t* enemies, uint8_t numOfEnemies, vector_t *playerPos, uint16_t bulletSpeed);
 int16_t getBulletCountdown();

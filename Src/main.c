@@ -101,8 +101,8 @@ int main(void)
 	//----------BULLETS--------------
 	uint8_t numBullets = 20;
 	bullet bullets[20] = {};
-	uint16_t bulletSpeed = 0x300;
-	uint16_t bulletSpeedIncrease = 0x50;
+	uint16_t bulletSpeed = 0x500;
+	uint16_t bulletSpeedIncrease = 0x60;
 	uint32_t bulletRespawnRate = 0x100;
 
 	//----------POWERUPS--------------
@@ -331,23 +331,25 @@ int main(void)
 				bulletUpdatePosition(bullets, numBullets, asteroids, numAsteroids);
 
 				// Check and handle bullet collision with player
-				if(bulletHitPlayer(&ship.pos, bullets, numBullets)){
-					if(!powerupEffects[invincibilityPU])
-						livesLeft--;
-					playerHit = 25;
-					if(livesLeft == 0){
-						aliensLeft--;
-						addLivesBuffer(bufferLCD, aliensLeft);
-						drawLCD(bufferLCD);
-						livesLeft = maxLives;
+				if(!powerupEffects[invincibilityPU]){
+					char hitBullet = bulletHitPlayer(&ship.pos, bullets, numBullets);
+					char hitSentry = sentryHitPlayer(&ship, sentries, numSentries);
+					if(hitBullet || hitSentry){
+						if(livesLeft == 1 || hitSentry){ //Alien dies
+							aliensLeft--;
+							livesLeft = maxLives;
 
-						makeNewAlien(&ship, &playerStartPos, &currentAlien);
-						if(aliensLeft == 0){
-							gameState = MENU;
-
+							addLivesBuffer(bufferLCD, aliensLeft); //Draw to LCD
+							drawLCD(bufferLCD);
+							makeNewAlien(&ship, &playerStartPos, &currentAlien);
+							if(aliensLeft == 0) //Game over
+								gameState = MENU;
+						}else{ //Player took hit but did not die
+							livesLeft--;
+							playerHit = 25;
 						}
+						setLEDToIndicateHealth(livesLeft);
 					}
-					setLEDToIndicateHealth(livesLeft);
 				}
 
 				// Draw bullets
@@ -377,8 +379,8 @@ int main(void)
 							setLEDToIndicateHealth(livesLeft);
 					}
 
-					//Draw active powerups
-					if(powerups[i].isActive)
+					//Draw active powerups but only every 8th frame to preserve putty bandwith
+					if(powerups[i].isActive && !(frameCount & 0b111))
 						drawPowerup(&powerups[i], frameCount, currentBackground);
 				}
 
@@ -394,10 +396,10 @@ int main(void)
 
 				//Checking for colliossn with powerups AND START POWERUP EFFECT
 				for(uint8_t p = 0; p < numPowerups; p++){
-					if(circleCollision(&powerups[p].pos, &ship.pos, 0x3500)){
+					vector_t anchorPos = {ship.pos.x - 0x400, ship.pos.y - 0x400};
+					if(circleCollision(&powerups[p].pos, &anchorPos, 0x7500)){
 						powerups[p].isActive = 0;
 						contaminateRect(backgroundContamination, FIX_2_XStat(powerups[p]), FIX_2_YStat(powerups[p]), 3*4, 7*2);
-
 
 						switch (powerups[p].power){
 						case healthPU:
@@ -531,17 +533,32 @@ void bulletUpdatePosition(bullet bullets[], uint8_t numOfBullets, GravitySource 
 }
 
 char bulletHitPlayer(vector_t* playerPos, bullet bullets[], uint8_t numBullets){
-	char hit = 0;
+	vector_t anchorPos = *playerPos;
+	anchorPos.x -= 0x600;
+	anchorPos.y -= 0x400;
 	for (uint8_t i = 0; i < numBullets; i++)
 	{
 		if(bullets[i].isActive){
-			if(circleCollision(playerPos, &bullets[i].pos, 0x2A00)){
-				hit = 1;
+			if(circleCollision(playerPos, &bullets[i].pos, 0x3A00)){
 				bullets[i].isActive = 0;
+				return 1;
 			}
 		}
 	}
-	return hit;
+	return 0;
+}
+
+char sentryHitPlayer(GravityTarget* ship, sentry_t sentries[], uint8_t numSentries){
+//	vector_t anchorPos;
+//	anchorPos = subtractVectors(&(ship->pos), &(ship->anchor));
+//	anchorPos = addVectors(&anchorPos, &(sentries[0].anchor));
+	for (uint8_t i = 0; i < numSentries; i++)
+	{
+		if(circleCollision(&(ship->pos), &sentries[i].pos, 0x4A00)){
+			return 1;
+		}
+	}
+	return 0;
 }
 
 void drawAllBullets(bullet bullets[], uint8_t numOfBullets, uint32_t frameCount, const uint8_t* background){
@@ -566,12 +583,18 @@ void generateBullets(bullet bullets[], uint8_t numOfBullets, sentry_t* enemies, 
 	}
 }
 int16_t getBulletCountdown(int32_t bulletSpeed){
-	return FIXMUL(10 + (rand16bit() >> 12), bulletSpeed);
+	int16_t time = FIXMUL(10 + (rand16bit() >> 12), bulletSpeed);
+	if(time < 10)
+		time = 10;
+	return time;
 }
 
 //----------------------------------POWERUPS-----------------------------------
 int16_t getPowerupCountdown(){
-	return 80 + (rand16bit() >> 10);
+	int16_t time = 50 + (rand16bit() >> 8);
+	if(time < 30)
+		time = 30;
+	return time;
 }
 void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameCount, const uint8_t currentbackground[], GravitySource asteroids[], uint8_t numAsteroids){
 	void randomVector(vector_t* pos){
@@ -580,7 +603,7 @@ void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameC
 	}
 	char collisionWithAsteroids(vector_t* pos){
 		for(uint8_t i = 0; i < numAsteroids; i++){
-			if(circleCollision(pos, &asteroids[i].pos, 0x9000))
+			if(circleCollision(pos, &asteroids[i].pos, 0x20000))
 				return 1;
 		}
 		return 0;
@@ -599,6 +622,8 @@ void generateNewPowerup(powerup powerups[], uint8_t numPowerups, uint16_t frameC
 			powerups[i].pos.y = pos.y;
 			powerups[i].isActive = 1;
 			powerups[i].power = powerups[i].pos.x & 0b11; //Semi random method of choosing power
+			powerups[i].anchor.x = 6;
+			powerups[i].anchor.y = 7;
 			break;
 		}
 	}
@@ -639,7 +664,7 @@ void drawSentry(sentry_t* sentry, uint32_t frameCount, const uint8_t* background
 }
 
 void drawBullet(bullet* bullet, uint32_t frameCount, const uint8_t* background){
-	drawSprite(background, Bullet_Anim[frameCount/8 % 3], 1, 2, WHITE, FIX_2_X(bullet), FIX_2_Y(bullet));
+	drawSprite(background, Bullet_Anim[frameCount/2 % 3], 1, 2, WHITE, FIX_2_X(bullet), FIX_2_Y(bullet));
 }
 
 void drawAsteroid(GravitySource* asteroid, const uint8_t* background) {
