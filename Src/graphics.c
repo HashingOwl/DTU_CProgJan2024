@@ -129,7 +129,7 @@ uint8_t getByteAtPos(const uint8_t* imageData, int xPos, int yPos, int width) {
 	}
 }
 
-// Find alt to 8-bit 16-bit
+// i is 0 - 3
 void drawBgChar(uint8_t byte, uint8_t i) {
 	switch ((byte >> (2*i)) & 0x03) {
 	case 0b00:
@@ -147,7 +147,6 @@ void drawBgChar(uint8_t byte, uint8_t i) {
 	}
 }
 
-// This func must die...
 void drawBgChar16(uint16_t byte, uint8_t i) {
 	switch ((byte >> (2*i)) & 0x03) {
 	case 0b00:
@@ -326,6 +325,24 @@ void drawCleanBackground(const uint8_t* background, uint8_t* cleanGrid) {
 				}
 			}
 
+		}
+	}
+}
+
+void drawBackgroundRect(const uint8_t* background, int x, int y, int w, int h) {
+	color(BACKGROUND_COLOR, BLACK);
+	int i = 0;
+	uint8_t bgByte;
+	// r and c in PuTTY cordinates
+	for (int r = y/2; r < (y+h+1)/2; r++) {
+		gotoxy(x, r);
+		i = 0;
+		for (int c = x; c < x+w; c++) {
+			if ((i%4) == 0) {
+				bgByte = background[r*(P_WIDTH/4) + c/4];
+			}
+			drawBgChar(bgByte, i%4);
+			i++;
 		}
 	}
 }

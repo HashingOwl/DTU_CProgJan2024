@@ -57,5 +57,6 @@ void resetGrid(uint8_t* grid);
 void contaminateRect(uint8_t* grid, int x, int y, int w, int h);
 void cleanRect(uint8_t* grid, int x, int y, int w, int h);
 void drawCleanBackground(const uint8_t* background, uint8_t* cleanGrid);
+void drawBackgroundRect(const uint8_t* grid, int x, int y, int w, int h);
 
 #endif /* GRAPHICS_H_ */
