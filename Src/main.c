@@ -141,9 +141,8 @@ int main(void)
 
 	//Music
 	soundInit();
-	//changeMusic(0);
-
-	initTimer15(639, 5000);
+	changeMusic(0);
+	initTimer15(49, 3600000);
 
 	//Miscenlaneous
 	initBossScreen();
