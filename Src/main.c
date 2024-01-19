@@ -120,6 +120,7 @@ int main(void)
 	setLED(BLUE);
 	lcd_init();
 
+
 	//Input
 	initAnalogJoystick();
 	initDigitalJoystick(); // While using mini joystick as substitute for proper joystick
@@ -143,14 +144,20 @@ int main(void)
 		drawBackground(currentBackground);
 	}
 
+
+
 	//Init LCD-display
 	uint8_t bufferLCD[512];
 	clearLCDBuffer(bufferLCD);
-
 	drawScore(bufferLCD, 0,0);
+
+
+
 	drawScore(bufferLCD, readHighscore(),1);
 	addLivesBuffer(bufferLCD,3);
 	drawLCD(bufferLCD);
+
+
 
 	void resetGameVals(){
 		aliensLeft = aliensLeftStart;
@@ -167,6 +174,10 @@ int main(void)
 		currentMap = 0;
 		configureMap(Maps[currentMap], &numAsteroids, asteroids, &numSentries, sentries);
 	}
+
+
+
+
 
 	//MAIN LOOP
 	while(1){

@@ -127,9 +127,9 @@ void clearLCDBuffer(uint8_t buffer[]) {
 #define NDIGITS 4
 void drawScore(uint8_t *slice, uint32_t score, uint8_t isHighScoreFlag){
 	uint8_t digit[NDIGITS] = {};
+	saveHighscore(score);
 	if (!isHighScoreFlag) {
-		saveHighscore(score);
-		if (score > readHighscore()) {
+		if (score >= readHighscore()) {
 			drawScore(slice,score,1);
 		}
 		lcd_write_string(slice,"Score ");
