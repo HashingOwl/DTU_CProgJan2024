@@ -35,13 +35,6 @@
 #define speedPU 2
 #define gravityPU 3
 
-/*
-#define MIN_X 0x200 //2.00
-#define MAX_X 0x7B00 //123.00
-#define MIN_Y 0x200 //2.00
-#define MAX_Y 0x7B00 //123.00
-*/
-
 //Set true by interrupt when it is time to make a new frame
 volatile uint8_t updateFrame = 0;
 
@@ -113,7 +106,7 @@ int main(void)
 	uint16_t powerupCountdown = getPowerupCountdown();
 	powerup powerups[2] = {};
 	uint8_t numPowerups = 2;
-	uint8_t powerupEffects[4] = {};
+	uint8_t powerupEffects[4] = {}; // Boolean values for what indecies of powerup are active.
 
 	//----------MENU------------------
 	uint8_t joyVal;
@@ -194,28 +187,20 @@ int main(void)
 				joyValPrev = joyVal;
 				joyVal = readAnalogJoystickDigital();
 				// Joystick changed, move selection
-				if (joyVal != joyValPrev) {
+				if (joyVal != joyValPrev && joyVal != 0) {
 					// clear old aliens
 					drawBackgroundRect(currentBackground, 14, 90 + currSelectionMainMenu * 38, 26+12, 8);
 					drawBackgroundRect(currentBackground, 147, 90 + currSelectionMainMenu * 38, 26+12, 8);
 
-					for(uint8_t i = 0;i < 2; i++){
-						//contaminateRect(backgroundContamination,46+i*95,90+currSelectionMainMenu*38,12,12);
-					}
-
-					if (joyVal & 0b1) {
+					if (joyVal & 0b1)
 						currSelectionMainMenu--;
-					}
-					else if ( (joyVal & 0b10) && joyVal != 0) {
+					else if ( (joyVal & 0b10))
 						currSelectionMainMenu++;
-					}
 
-					if (currSelectionMainMenu >2) {
+					if (currSelectionMainMenu > 2)
 						currSelectionMainMenu = 0;
-					}
-					else if(currSelectionMainMenu < 0) {
+					else if(currSelectionMainMenu < 0)
 						currSelectionMainMenu = 2;
-					}
 
 					// Draw new aliens
 					drawSprite(currentBackground, Alien1_1, 3, 4, BLUE, 40, 90 + currSelectionMainMenu * 38);
@@ -227,6 +212,7 @@ int main(void)
 					drawSprite(currentBackground, Alien3_1, 2, 4, RED, 177, 90 + currSelectionMainMenu * 38);
 				}
 
+				// Draw aliens if we just stated the menu mode
 				if (frameCount == 0) {
 					drawSprite(currentBackground, Alien1_1, 3, 4, BLUE, 40, 90 + currSelectionMainMenu * 38);
 					drawSprite(currentBackground, Alien2_1, 3, 4, GREEN, 25, 90 + currSelectionMainMenu * 38);
@@ -236,16 +222,8 @@ int main(void)
 					drawSprite(currentBackground, Alien2_1, 3, 4, GREEN, 162, 90 + currSelectionMainMenu * 38);
 					drawSprite(currentBackground, Alien3_1, 2, 4, RED, 177, 90 + currSelectionMainMenu * 38);
 				}
-				/*
-				drawCleanBackground(currentBackground, backgroundContamination);
-				resetGrid(backgroundContamination);
 
-				for(uint8_t i = 0;i < 2; i++){
-					drawSprite(currentBackground, Alien1_Anim[0], 3, 4, WHITE, 46+i*95,90+currSelectionMainMenu*38);
-				}
-				*/
-
-				// Button pressed down, select this option
+				// Button pressed down, handle the current selection
 				if (readJoystickButtons() && buttonLift) {
 					buttonLift = 0;
 					playBeep();
@@ -474,7 +452,7 @@ int main(void)
 
 				//-------------------Drawing--------------------------------
 				// Player
-				drawAlien(&ship, currentAlien, frameCount, currentBackground, playerHit);
+				drawAlien(&ship, currentAlien, powerupEffects, frameCount, currentBackground, playerHit);
 				cleanRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
 
 				// Clean Background
@@ -738,18 +716,32 @@ void drawAsteroid(GravitySource* asteroid, const uint8_t* background) {
 	drawSprite(background, Asteroid_1, 5, 10, BROWN, FIX_2_X(asteroid), FIX_2_Y(asteroid));
 }
 
-void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const uint8_t* background, uint8_t playerHit) {
+void drawAlien(GravityTarget* alien, uint8_t alienNum, uint8_t* powerUpEffects, uint32_t frameCount, const uint8_t* background, uint8_t playerHit) {
+	uint8_t color = WHITE;
+	const uint8_t* spriteData;
+
+	if (powerUpEffects[invincibilityPU]) {
+		color = PURPLE;
+	} else if (powerUpEffects[speedPU]) {
+		color = YELLOW;
+	} else if (powerUpEffects[gravityPU]) {
+		color = CYAN;
+	}
+
 	switch(alienNum) {
 	case 1:
-		drawSprite(background, playerHit ? Alien1_Dead: Alien1_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
-		break;
+		if (playerHit) { spriteData = Alien1_Dead; break; }
+		spriteData = Alien1_Anim[frameCount/8 % 2]; break;
 	case 2:
-		drawSprite(background, playerHit ? Alien2_Dead: Alien2_Anim[frameCount/8 % 2], 3, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
-		break;
+		if (playerHit) { spriteData = Alien2_Dead; break; }
+		spriteData = Alien2_Anim[frameCount/8 % 2]; break;
 	case 3:
-		drawSprite(background, playerHit ? Alien3_Dead: Alien3_Anim[frameCount/8 % 2], 2, 4, GREEN, FIX_2_X(alien), FIX_2_Y(alien));
-		break;
+		if (playerHit) { spriteData = Alien3_Dead; break; }
+		spriteData = Alien3_Anim[frameCount/8 % 2]; break;
 	}
+
+	drawSprite(background, spriteData, ((alienNum == 3) ? 2 : 3), 4, color, FIX_2_X(alien), FIX_2_Y(alien));
+
 }
 
 //----------------------------------LED-----------------------------------------

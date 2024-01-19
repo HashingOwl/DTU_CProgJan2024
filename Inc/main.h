@@ -54,7 +54,7 @@ void drawBullet(bullet* bullet, uint32_t frameCount, const uint8_t* background);
 
 void drawAsteroid(GravitySource* asteroid, const uint8_t* background);
 
-void drawAlien(GravityTarget* alien, int alienNum, uint32_t frameCount, const uint8_t* background, uint8_t playerHit);
+void drawAlien(GravityTarget* alien, uint8_t alienNum, uint8_t* powerUpEffects, uint32_t frameCount, const uint8_t* background, uint8_t playerHit);
 
 void updateSentryPos(sentry_t* sentry, uint32_t frameCount);
 
