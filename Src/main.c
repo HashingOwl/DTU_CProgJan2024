@@ -109,8 +109,8 @@ int main(void)
 	//----------POWERUPS--------------
 	char RNGSeedSet = 0;
 	uint16_t powerupCountdown = getPowerupCountdown();
-	powerup powerups[4] = {};
-	uint8_t numPowerups = 4;
+	powerup powerups[2] = {};
+	uint8_t numPowerups = 2;
 	uint8_t powerupEffects[4] = {};
 
 	//----------MENU------------------
@@ -386,7 +386,7 @@ int main(void)
 				//--------------------------POWERUPS---------------------------------
 				//Decreasing powerup effect countdowns and drawing powerups
 				powerupCountdown--;
-				for(uint8_t i = 0; i < 4; i++){
+				for(uint8_t i = 0; i < numPowerups; i++){
 					//Decresing powerupeffect countdown and applying end effect
 					if(powerupEffects[i]){
 						powerupEffects[i]--;
