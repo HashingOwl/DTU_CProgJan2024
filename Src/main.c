@@ -89,12 +89,14 @@ int main(void)
 
 	//----------ENEMIES--------------
 	// Sentries
-	int numSentries = 2;
-	sentry_t sentries[2] = {
-			{.orbitPos = {U_WIDTH/2, U_HEIGHT/2}, 	.orbitRadius = 40 << FIX, 	.phase = 0, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
-			{.orbitPos = {U_WIDTH/2, U_HEIGHT/2}, 	.orbitRadius = 40 << FIX, 	.phase = 512, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
+	uint8_t numSentries = 4;
+	sentry_t sentries[4] = {
+			{.orbitPos = {U_WIDTH/2, U_HEIGHT/2}, 	.orbitRadius = 35 << FIX, 	.phase = 0, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
+			{.orbitPos = {U_WIDTH/2, U_HEIGHT/2}, 	.orbitRadius = 35 << FIX, 	.phase = 512, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
+			{.orbitPos = {160 << FIX, 50 << FIX}, 	.orbitRadius = 25 << FIX, 	.phase = 512, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
+			{.orbitPos = {40 << FIX, 150 << FIX}, 	.orbitRadius = 25 << FIX, 	.phase = 512, 	.anchor = {10, 4}, 	.radius = 10 << FIX},
 	};
-	for (int i = 0; i < numSentries; i++) { updateSentryPos(&sentries[i], 0); }
+	for (uint8_t i = 0; i < numSentries; i++) { updateSentryPos(&sentries[i], 0); }
 
 	int16_t enemyShootResetValue = 20 * 5; // 20 * seconds between shoot
 	int16_t enemyShootCountdown = enemyShootResetValue;
@@ -174,7 +176,9 @@ int main(void)
 		livesLeft = maxLives;
 		currentAlien = 1;
 		enemyShootCountdown = enemyShootResetValue;
-		for (int i = 0; i < numSentries; i++) { sentries[i].orbitPos.x=U_WIDTH/2; sentries[i].orbitPos.y= U_HEIGHT/2;  sentries[i].phase = 512*i; }
+		for (int i = 0; i < 2; i++) { sentries[i].orbitPos.x=U_WIDTH/2; sentries[i].orbitPos.y= U_HEIGHT/2;sentries[i].phase= 512*i;}
+		sentries[2].orbitPos.x=160 << FIX; sentries[2].orbitPos.y= 50 << FIX; sentries[2].phase= 512;
+		sentries[3].orbitPos.x=40 << FIX; sentries[3].orbitPos.y= 150 << FIX; sentries[3].phase= 512;
 		for (int i= 0; i < numBullets; i++) {bullets[i].isActive = 0;}
 		for (int i= 0; i < numPowerups; i++) {powerups[i].isActive = 0;}
 	}
