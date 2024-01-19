@@ -86,7 +86,7 @@ int main(void)
 	uint8_t numSentries;
 	sentry_t sentries[4] = {}; // Filled by the configureMap() function
 
-	int16_t enemyShootResetValue = 20 * 5; // 20 * seconds between shoot
+	int16_t enemyShootResetValue = 15;
 	int16_t enemyShootCountdown = enemyShootResetValue;
 
 	//----------BULLETS--------------
@@ -304,6 +304,13 @@ int main(void)
 						drawLCD(bufferLCD);
 						makeNewAlien(&ship, &playerStartPos, &currentAlien);
 
+						// Set shootCoutdown.
+						enemyShootCountdown = enemyShootResetValue;
+						// Deactivate bullets
+						for (uint8_t i = 0; i < numBullets; i++) {
+							bullets[i].isActive = 0;
+						}
+
 						if (aliensThrough % 3 == 0) {
 							drawBackground(currentBackground);
 							currentMap = (currentMap+1)%3;
@@ -313,10 +320,6 @@ int main(void)
 								drawAsteroid(&asteroids[i], currentBackground);
 								// Delay - without this it doesn't work for mysterious reasons.
 								for (uint32_t i = 0; i < 360000; i++);
-							}
-							// Deactivate bullets
-							for (uint8_t i = 0; i < numBullets; i++) {
-								bullets[i].isActive = 0;
 							}
 							// Deactive powerups
 							for (uint8_t i = 0; i < numPowerups; i++) {
