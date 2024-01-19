@@ -183,15 +183,21 @@ int main(void)
 	while(1){
 		if(updateFrame){
 			updateFrame = 0;
-			frameCount++;
-
+			// Frame count updated in bottom of loop
 			switch (gameState) {
 //==========================================MENU========================================================
 			case MENU:
+				// Read input
+				joyValPrev = joyVal;
 				joyVal = readAnalogJoystickDigital();
+				// Joystick changed, move selection
 				if (joyVal != joyValPrev) {
+					// clear old aliens
+					drawBackgroundRect(currentBackground, 14, 90 + currSelectionMainMenu * 38, 26+12, 8);
+					drawBackgroundRect(currentBackground, 147, 90 + currSelectionMainMenu * 38, 26+12, 8);
+
 					for(uint8_t i = 0;i < 2; i++){
-						contaminateRect(backgroundContamination,46+i*95,90+currSelectionMainMenu*38,12,12);
+						//contaminateRect(backgroundContamination,46+i*95,90+currSelectionMainMenu*38,12,12);
 					}
 
 					if (joyVal & 0b1) {
@@ -201,21 +207,42 @@ int main(void)
 						currSelectionMainMenu++;
 					}
 
-				}
-				if (currSelectionMainMenu >2) {
-					currSelectionMainMenu = 0;
-				}
-				else if(currSelectionMainMenu < 0) {
-					currSelectionMainMenu = 2;
-				}
-				joyValPrev = joyVal;
+					if (currSelectionMainMenu >2) {
+						currSelectionMainMenu = 0;
+					}
+					else if(currSelectionMainMenu < 0) {
+						currSelectionMainMenu = 2;
+					}
 
+					// Draw new aliens
+					drawSprite(currentBackground, Alien1_1, 3, 4, BLUE, 40, 90 + currSelectionMainMenu * 38);
+					drawSprite(currentBackground, Alien2_1, 3, 4, GREEN, 25, 90 + currSelectionMainMenu * 38);
+					drawSprite(currentBackground, Alien3_1, 2, 4, RED, 14, 90 + currSelectionMainMenu * 38);
+
+					drawSprite(currentBackground, Alien1_1, 3, 4, BLUE, 147, 90 + currSelectionMainMenu * 38);
+					drawSprite(currentBackground, Alien2_1, 3, 4, GREEN, 162, 90 + currSelectionMainMenu * 38);
+					drawSprite(currentBackground, Alien3_1, 2, 4, RED, 177, 90 + currSelectionMainMenu * 38);
+				}
+
+				if (frameCount == 0) {
+					drawSprite(currentBackground, Alien1_1, 3, 4, BLUE, 40, 90 + currSelectionMainMenu * 38);
+					drawSprite(currentBackground, Alien2_1, 3, 4, GREEN, 25, 90 + currSelectionMainMenu * 38);
+					drawSprite(currentBackground, Alien3_1, 2, 4, RED, 14, 90 + currSelectionMainMenu * 38);
+
+					drawSprite(currentBackground, Alien1_1, 3, 4, BLUE, 147, 90 + currSelectionMainMenu * 38);
+					drawSprite(currentBackground, Alien2_1, 3, 4, GREEN, 162, 90 + currSelectionMainMenu * 38);
+					drawSprite(currentBackground, Alien3_1, 2, 4, RED, 177, 90 + currSelectionMainMenu * 38);
+				}
+				/*
 				drawCleanBackground(currentBackground, backgroundContamination);
 				resetGrid(backgroundContamination);
 
 				for(uint8_t i = 0;i < 2; i++){
 					drawSprite(currentBackground, Alien1_Anim[0], 3, 4, WHITE, 46+i*95,90+currSelectionMainMenu*38);
 				}
+				*/
+
+				// Button pressed down, select this option
 				if (readJoystickButtons() && buttonLift) {
 					buttonLift = 0;
 					playBeep();
@@ -225,6 +252,7 @@ int main(void)
 							resetGameVals();
 							currentBackground = BG_Stratosphere_2;
 							gameState = PLAYING;
+							frameCount = 0;
 							initGame(currentBackground, asteroids, numAsteroids, livesLeft);
 							break;
 						//Goto help screen
@@ -232,6 +260,7 @@ int main(void)
 							currentBackground = HelpScreen;
 							drawBackground(currentBackground);
 							gameState = HELP;
+							frameCount = 0;
 							break;
 						//Dis/en-able sound
 						case 2:
@@ -357,8 +386,9 @@ int main(void)
 							addLivesBuffer(bufferLCD, aliensLeft); //Draw to LCD
 							drawLCD(bufferLCD);
 							makeNewAlien(&ship, &playerStartPos, &currentAlien);
-							if(aliensLeft == 0) //Game over
+							if (aliensLeft == 0) { //Game over
 								gameState = MENU;
+							}
 						}else{ //Player took hit but did not die
 							livesLeft--;
 							playerHit = 25;
@@ -448,9 +478,6 @@ int main(void)
 				drawCleanBackground(currentBackground, backgroundContamination);
 				resetGrid(backgroundContamination);
 
-				//gotoxy(0,0); printf("%4ld", debug1);
-				//gotoxy(0,1); printf("%4ld", debug2);
-
 				//------------Contaminate-for-next-frame--------------------
 				// Player
 				contaminateRect(backgroundContamination, (ship.pos.x >> FIX) - ship.anchor.x, (ship.pos.y >> FIX) - ship.anchor.y, 12, 8);
@@ -475,6 +502,8 @@ int main(void)
 				if (gameState == MENU) {
 					currentBackground = MainMenuBG;
 					drawBackground(currentBackground);
+					frameCount = 0;
+					continue;
 				}
 				break;
 //=========================================HELP======================================================
@@ -487,6 +516,8 @@ int main(void)
 					currentBackground = MainMenuBG;
 					drawBackground(currentBackground);
 					gameState = MENU;
+					frameCount = 0;
+					continue;
 				}
 				else if (readJoystickButtons() == 0){
 					buttonLift = 1;
@@ -499,6 +530,8 @@ int main(void)
 					initGame(currentBackground, asteroids, numAsteroids, livesLeft);
 				}
 			}
+		// Update frame count
+		frameCount++;
 		}
 	}
 }
