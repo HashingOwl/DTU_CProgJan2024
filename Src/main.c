@@ -14,6 +14,8 @@
 #include "lcd.h"
 #include "bossScreen.h"
 
+//Baudrate
+#define BAUDRATE 256000
 // Game states
 #define MENU 1
 #define PLAYING 2
@@ -120,12 +122,11 @@ int main(void)
 
 	//----------INITIALISATION OF HARD- AND SOFTWARE----------
 	// Output
-	uart_init(256000);
+	uart_init(BAUDRATE);
 	initLED();
 	setLED(BLUE);
 	lcd_init();
 
-	//while(1);
 	//Input
 	initAnalogJoystick();
 	initDigitalJoystick(); // While using mini joystick as substitute for proper joystick
@@ -153,7 +154,7 @@ int main(void)
 	//Init LCD-display
 	uint8_t bufferLCD[512];
 	clearLCDBuffer(bufferLCD);
-	//resetScore();
+
 	drawScore(bufferLCD, 0,0);
 	drawScore(bufferLCD, readHighscore(),1);
 	addLivesBuffer(bufferLCD,3);

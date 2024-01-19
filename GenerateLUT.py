@@ -11,15 +11,8 @@ deci = 8
 steps = 512
 
 def func(x):
-    if x==256:
-        return 0.999999
-    return m.sin(x*m.pi/steps)
-    """
-    if x == 0:
-        return 0
-    print()
-    print((x%8)<<(x//8))
-    return 1/m.sqrt(x)"""
+    return m.sqrt(x)
+
 
 def to_fixed(f,e):
     a = f* (2**e)
@@ -30,15 +23,19 @@ def to_fixed(f,e):
         b = ~b
         b = b + 1
     return b
-
-numbersSimulated = list(range(0,steps))
+numbersSimulated = []
+for i in range(6):
+    for j in range(1,16):
+        numbersSimulated.append(j<<(i*4))
+print(numbersSimulated)
+#numbersSimulated = list(range(0,steps))
 
 s = float_to_fp(signed=True, n_bits=full, n_frac=deci)
 
 
 outString = "{} {}[{}] = ".format(funcName,lutType,len(numbersSimulated)) +"{"
 for i in numbersSimulated:
-    outString += str(hex(s(func(i))&0xFF)) +","
+    outString += str(hex(s(func(i))&0xFFFFFFFF)) +","
 outString += "};"
 fileName = os.path.dirname(os.path.abspath(__file__))+"\\LUToutput\\"+"{}.txt".format(funcName)
 
