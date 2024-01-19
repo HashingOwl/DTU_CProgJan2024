@@ -75,7 +75,7 @@ void TIM1_UP_TIM16_IRQHandler(void) {
 	if (beepCount > 0) {
 		setVoltage((beepCount&0x1)*32+(currVol>>1));
 		beepCount--;
-		if ((beepCount & 0x4) && rest) {
+		if (!(beepCount & 0x3) && rest) {
 			currVol += direction;
 		}
 		if (currVol >= 128) {
