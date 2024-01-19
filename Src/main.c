@@ -412,7 +412,7 @@ int main(void)
 				//Checking for colliossn with powerups AND START POWERUP EFFECT
 				for(uint8_t p = 0; p < numPowerups; p++){
 					vector_t anchorPos = {ship.pos.x - 0x400, ship.pos.y - 0x400};
-					if(circleCollision(&powerups[p].pos, &anchorPos, 0x7500)){
+					if(powerups[p].isActive && circleCollision(&powerups[p].pos, &anchorPos, 0x7500)){
 						playBeep();
 						powerups[p].isActive = 0;
 						contaminateRect(backgroundContamination, FIX_2_XStat(powerups[p]), FIX_2_YStat(powerups[p]), 3*4, 7*2);
